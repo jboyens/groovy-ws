@@ -31,7 +31,7 @@
 	    <fileset dir="bin" includes="groovyx/**"/>
 	    <fileset dir="." includes="log4j.properties"/>
 	</jar>
-	<zip destfile="dist/${ant.project.name}-all-${version}.jar" duplicate="preserve" excludes="javax.xml.namespace.**">
+	<zip destfile="dist/${ant.project.name}-standalone-${version}.jar" duplicate="preserve" excludes="javax.xml.namespace.**">
 		<zipfileset src="dist/${ant.project.name}-${version}.jar"/>
 		<zipfileset src="${cxf.jar}"/>
 		<zipfileset src="${commons-logging.jar}"/>
@@ -55,6 +55,28 @@
 		<zipfileset src="${geronimo-servlet.jar}"/>
 		<zipfileset src="${jetty.jar}"/>
 		<zipfileset src="${jetty-util.jar}"/>
+	</zip>
+	<zip destfile="dist/${ant.project.name}-all-${version}.jar" duplicate="preserve" excludes="javax.xml.namespace.**">
+		<zipfileset src="dist/${ant.project.name}-${version}.jar"/>
+		<zipfileset src="${cxf.jar}"/>
+		<zipfileset src="${commons-logging.jar}"/>
+		<zipfileset src="${geronimo-activation.jar}"/>
+		<zipfileset src="${geronimo-annotation.jar}"/>
+		<zipfileset src="${geronimo-javamail.jar}"/>
+		<zipfileset src="${geronimo-ws-metadata.jar}"/>
+		<zipfileset src="${neethi.jar}"/>
+		<zipfileset src="${jaxb-api.jar}"/>
+		<zipfileset src="${jaxb-impl.jar}"/>
+		<zipfileset src="${jaxb-xjc.jar}"/>
+		<zipfileset src="${jaxws-api.jar}"/>
+		<zipfileset src="${stax-api.jar}"/>
+		<zipfileset src="${XmlSchema.jar}"/>
+		<zipfileset src="${wstx-asl.jar}"/>
+		<zipfileset src="${wsdl4j.jar}"/>
+		<zipfileset src="${xml-resolver.jar}"/>
+		<zipfileset src="${jaxen.jar}"/>
+		<zipfileset src="${jdom.jar}"/>
+		<zipfileset src="${stax-utils.jar}"/>
 	</zip>
     </target>
 </project>
