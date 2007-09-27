@@ -16,10 +16,13 @@ public class WSServer {
     private ServerFactoryBean sf;
 
     public WSServer(AuthorizationPolicy ap) {
+    }
+    
+    public WSServer() {
         sf = new ServerFactoryBean();
 
         Map<String,Object> props = new HashMap<String, Object>();
-        props.put("mtom-enabled", Boolean.TRUE);      
+//        props.put("mtom-enabled", Boolean.TRUE);      
         sf.setProperties(props);
         
         sf.getServiceFactory().getServiceConfigurations().add(0, new GroovyConfiguration());

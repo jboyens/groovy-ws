@@ -41,16 +41,16 @@ public class WSClient extends GroovyObjectSupport {
         Object[] objs = InvokerHelper.getInstance().asArray(args);
 
         try {
-
+/*
             QName qname = new QName(client.getEndpoint().getService().getName().getNamespaceURI(), name);
             BindingOperationInfo op = client.getEndpoint().getEndpointInfo().getBinding().getOperation(qname);
            
             System.out.println("-> " + qname.toString() + "  -  " + op.toString());
             
             Object[] response = client.invoke(op, (Object[])objs, context);
-/*
+*/
             Object[] response = client.invoke(name, objs);
-*/            
+            
             // TODO Parse the answer
             if (response == null){
                 return null;
@@ -95,8 +95,8 @@ public class WSClient extends GroovyObjectSupport {
         try {
             client = DynamicClientFactory.newInstance().createClient(URLLocation, cl);
 
-            client.getOutInterceptors().add(new LoggingOutInterceptor());
-            client.getInInterceptors().add(new LoggingInInterceptor());
+//            client.getOutInterceptors().add(new LoggingOutInterceptor());
+//            client.getInInterceptors().add(new LoggingInInterceptor());
 
             //context.put("mtom-enabled", Boolean.TRUE);      
 
