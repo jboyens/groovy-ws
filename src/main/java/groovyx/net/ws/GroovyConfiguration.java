@@ -1,11 +1,10 @@
 package groovyx.net.ws;
 
 import groovy.lang.GroovyObject;
-import groovy.lang.MissingMethodException;
+import org.apache.cxf.aegis.databinding.AegisServiceConfiguration;
+import org.apache.cxf.service.model.OperationInfo;
 
 import java.lang.reflect.Method;
-
-import org.apache.cxf.aegis.databinding.AegisServiceConfiguration;
 
 
 public class GroovyConfiguration extends AegisServiceConfiguration {
@@ -22,7 +21,10 @@ public class GroovyConfiguration extends AegisServiceConfiguration {
 				// TODO Auto-generated catch block
 				return super.isOperation(m);
 		}
-
-        
     }
+
+    public String getAction(OperationInfo op, Method m){
+        return op.getName().getLocalPart();
+    }
+
 }
