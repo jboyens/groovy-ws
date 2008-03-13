@@ -1,0 +1,35 @@
+TestArraysWithDynamicClient
+
+INFO: Outbound Message
+---------------------------
+Encoding:
+Headers:
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+    <soap:Body>
+        <ns1:GetPlaceList xmlns:ns1="http://terraserver-usa.com/terraserver/">
+            <placeName xmlns="http://terraserver-usa.com/terraserver/">mountain view</placeName>
+            <MaxItems xmlns="http://terraserver-usa.com/terraserver/">5</MaxItems>
+            <imagePresence xmlns="http://terraserver-usa.com/terraserver/">true</imagePresence>
+        </ns1:GetPlaceList>
+    </soap:Body>
+</soap:Envelope>
+--------------------------------------
+
+INFO: Outbound Message
+---------------------------
+Encoding:
+Headers:
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+    <soap:Body>
+        <ns1:GetPlaceList xmlns:ns1="http://terraserver-usa.com/terraserver/">
+            <placeName xmlns="http://terraserver-usa.com/terraserver/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="Place">
+                <City>San Francisco</City>
+                <State>California</State>
+                <Country>USA</Coun try>
+            </placeName>
+            <MaxItems xmlns="http://terraserver-usa.com/terraserver/">5</MaxItems>
+            <imagePresence xmlns="http://terraserver-usa.com/terraserver/">true</imagePresence>
+        </ns1:GetPlaceList>
+    </soap:Body>
+</soap:Envelope>
+--------------------------------------
