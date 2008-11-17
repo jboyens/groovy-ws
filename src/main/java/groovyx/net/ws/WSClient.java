@@ -1,147 +1,97 @@
 package groovyx.net.ws;
 
-import com.ibm.wsdl.extensions.soap.SOAPBindingImpl;
 import groovy.lang.GroovyObjectSupport;
-import org.apache.cxf.binding.soap.saaj.SAAJOutInterceptor;
-import org.apache.cxf.common.logging.LogUtils;
+
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.UnknownHostException;
+import java.security.KeyManagementException;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.UnrecoverableKeyException;
+import java.security.cert.CertificateException;
+import java.util.HashMap;
+import java.util.Map;
+
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLHandshakeException;
+import javax.net.ssl.SSLSocket;
+import javax.net.ssl.TrustManagerFactory;
+import javax.xml.namespace.QName;
+
 import org.apache.cxf.configuration.jsse.TLSClientParameters;
 import org.apache.cxf.configuration.security.AuthorizationPolicy;
 import org.apache.cxf.configuration.security.FiltersType;
 import org.apache.cxf.endpoint.Client;
-import org.apache.cxf.endpoint.Endpoint;
 import org.apache.cxf.endpoint.dynamic.DynamicClientFactory;
-import org.apache.cxf.interceptor.LoggingInInterceptor;
-import org.apache.cxf.interceptor.LoggingOutInterceptor;
-import org.apache.cxf.service.Service;
-import org.apache.cxf.service.model.*;
+import org.apache.cxf.service.model.BindingOperationInfo;
 import org.apache.cxf.transport.http.HTTPConduit;
 import org.apache.cxf.transports.http.configuration.HTTPClientPolicy;
-import org.apache.cxf.ws.security.wss4j.WSS4JOutInterceptor;
-import org.apache.ws.commons.schema.XmlSchemaObject;
-import org.apache.ws.security.WSConstants;
-import org.apache.ws.security.WSPasswordCallback;
-import org.apache.ws.security.handler.WSHandlerConstants;
 import org.codehaus.groovy.runtime.InvokerHelper;
 
-import javax.security.auth.callback.Callback;
-import javax.security.auth.callback.CallbackHandler;
-import javax.security.auth.callback.UnsupportedCallbackException;
-import javax.xml.namespace.QName;
-import java.io.*;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.nio.charset.Charset;
 
 public class WSClient extends GroovyObjectSupport {
-    private Client client;
-    private Map<String, String> credential = new HashMap<String, String>();
 
-    private static final Logger LOG = LogUtils.getL7dLogger(WSClient.class);
+    private Client client = null;
+    private String loc = null;
+    private Map<String, String> mproxy = null;
+    private Map<String, String> mssl = null;
+    private Map<String, String> mba = null;
+    private Boolean bssl = false;
+    private Boolean bmtom = false;
+    private Boolean bproxy = false;
+    private Boolean bba = false;
+    private ClassLoader cl = null;
+    private String wsdl = null;
+    private TrustManagerFactory tmf = null;
+    private KeyManagerFactory kmf = null;
 
-    /**
-     * List all the operations available on the service
-     *
-     */
-    public void getClientCode(OutputStream os) {
-        OutputStreamWriter osw = new OutputStreamWriter(os, Charset.forName("utf-8"));
-        ServiceInfo si = client.getEndpoint().getEndpointInfo().getService();
-        ServiceGroovyBuilder sgb;
-        sgb = new ServiceGroovyBuilder(si);
-        sgb.walk();
-        String serviceGroovyScript = sgb.getCode();
-        try {
-            osw.append(serviceGroovyScript);
-            osw.flush();
-        } catch (IOException e) {
-            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-        }
-    }
 
-    /**
-     * Set up the WS-Security parameters
-     *
-     * @param map user/password pair using the method
-     *
-     * @throws Exception
-     */
-    public void setCredential(Map<String, String> map) throws Exception {
-
-        this.credential = map;
-        if (credential.size() != 1) throw new Exception("Cannot have multiple ceredentials");
-
-        Endpoint ep = client.getEndpoint();
-        Map outProps = new HashMap();
-
-        outProps.put(WSHandlerConstants.ACTION, WSHandlerConstants.USERNAME_TOKEN);
-        System.out.println("Set WSHandler for " + credential.keySet().toArray()[0]);
-        outProps.put(WSHandlerConstants.USER, map.keySet().toArray()[0]);
-        outProps.put(WSHandlerConstants.PASSWORD_TYPE, WSConstants.PW_TEXT);
-        outProps.put(WSHandlerConstants.PW_CALLBACK_CLASS, ClientPasswordHandler.class.getName());
-
-        WSS4JOutInterceptor wssOut = new WSS4JOutInterceptor(outProps);
-        ep.getOutInterceptors().add(wssOut);
-        ep.getOutInterceptors().add(new SAAJOutInterceptor());
-    }
-
-    /**
-     * Invoke a method on a GroovyWS component using the CXF
-     * dynamic client </p>
-     * <p>Example of Groovy code:</p>
-     * <code>
-     * client = new WSClient("http://www.webservicex.net/WeatherForecast.asmx?WSDL", this.classloader)
-     * def answer = client.GetWeatherByPlaceName("Seattle")
-     * </code>
-     *
-     * @param name name of the method to call
-     * @param args parameters of the method call
-     * @return the value returned by the method call
-     */
     public Object invokeMethod(String name, Object args) {
-        Object[] objs = InvokerHelper.asArray(args);
+
+        Object[] args_a = InvokerHelper.asArray(args);
+        Object[] response;
 
         try {
-
             QName qname = new QName(client.getEndpoint().getService().getName().getNamespaceURI(), name);
             BindingOperationInfo op = client.getEndpoint().getEndpointInfo().getBinding().getOperation(qname);
 
-            if (op == null) {
+            if (op == null)
                 return null;
-            }
 
-            Object[] response = null;
+            if (op.isUnwrappedCapable())
+                response = client.invoke(op.getUnwrappedOperation(), args_a);
+            else
+                response = client.invoke(name, args_a);
 
-            if (LOG.isLoggable(Level.FINE)) {
-                LOG.fine("Invoke, operation info: " + op + ", objs: " + objs);
-            }
-
-            if (op.isUnwrappedCapable()) {
-                op = op.getUnwrappedOperation();
-                response = client.invoke(op, objs);
-            } else {
-                response = client.invoke(name, objs);
-            }
-
-            // TODO Parse the answer
-            if (response == null) {
+            if (response == null)
                 return null;
-            } else {
+            else
                 return response[0];
-            }
+
         } catch (Exception e) {
             e.printStackTrace();
             return null;
         }
-
     }
 
     public Object create(String name) {
-        Object obj = null;
+        Object o = null;
+
         try {
-            obj = Thread.currentThread().getContextClassLoader().loadClass(name).newInstance();
+            o = Thread.currentThread().getContextClassLoader().loadClass(name).newInstance();
         } catch (InstantiationException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
@@ -152,184 +102,317 @@ public class WSClient extends GroovyObjectSupport {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
-        return obj;
+
+        return o;
     }
 
+    private void initializeBa() {
+        mba.put("http.user", System.getProperty("http.user"));
+        mba.put("http.password", System.getProperty("http.password"));
+    }
 
-    /**
-     * Create a SoapClient using a URL
-     * <p>Example of Groovy code:</p>
-     * <code>
-     * client = new SoapClient("http://www.webservicex.net/WeatherForecast.asmx?WSDL")
-     * </code>
-     *
-     * @param InputStream the input stream pointing to the WSDL
-     * @param cl the classloader
-     */
-    /*
-    public WSClient(InputStream is, ClassLoader cl) {
-        File temp = new File.createTempFile("plop",".txt");
-        temp.deleteOnExit();
+    private void initializeProxy() {
+        mproxy.put("http.proxyHost", System.getProperty("http.proxyHost"));
+        mproxy.put("http.proxyPort", System.getProperty("http.proxyPort"));
+        mproxy.put("http.proxy.user", System.getProperty("http.proxy.user"));
+        mproxy.put("http.proxy.password", System.getProperty("http.proxy.password"));
+    }
 
-        byte bytes[] = null;
+    public WSClient(String loc, ClassLoader cl) {
+
+        this.cl = cl;
+        this.loc = loc;
+
+        URL url;
+
         try {
-            bytes = new byte[is.available()];
-
-            OutputStream os = new FileOutputStream(temp);
-            os.write(is.read(bytes));
-        } catch (IOException e) {
-            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+            url = new URL(loc);
+            if (url.getProtocol().equals("https"))
+                setSSL();
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
         }
 
-        new WSClient(temp.getAbsolutePath(), cl);
+        if (bba)
+            initializeBa();
+        if (bproxy)
+            initializeProxy();
     }
-    */
-    /**
-     * Create a SoapClient using a URL
-     * <p>Example of Groovy code:</p>
-     * <code>
-     * client = new SoapClient("http://www.webservicex.net/WeatherForecast.asmx?WSDL")
-     * </code>
-     *
-     * @param URLLocation the URL pointing to the WSDL
-     * @param cl the classloader
-     */
-    public WSClient(String URLLocation, ClassLoader cl) {
+
+    public void getWsdl() throws IllegalArgumentException {
+        URL url;
+
         try {
-            client = DynamicClientFactory.newInstance().createClient(URLLocation, cl);
+            url = new URL(loc);
 
-            //client.getOutInterceptors().add(new LoggingOutInterceptor());
-            //client.getInInterceptors().add(new LoggingInInterceptor());
+            if (url.getQuery().compareTo("wsdl") > 0)
+                throw new IllegalArgumentException(
+                        "Bad query. Expected 'wsdl', not '" + url.getQuery()
+                                + "'");
 
-            //context.put("mtom-enabled", Boolean.TRUE);
+            if (url.getProtocol().equals("https")) {
+                try {
+                    SSLContext ctx = SSLContext.getInstance("TLS");// Here we
+                    // choose
+                    // the TLS
+                    // protocol
+                    // ... for
+                    // now
+                    if (kmf != null && tmf != null)
+                        ctx.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
+                    else if (kmf == null)
+                        ctx.init(null, tmf.getTrustManagers(), null);
+                    else if (tmf == null)
+                        ctx.init(kmf.getKeyManagers(), null, null);
 
-            String host = System.getProperty("http.proxyHost");
-            String port = System.getProperty("http.proxyPort");
-            String proxyUsername = System.getProperty("http.proxy.user");
-            String proxyPassword = System.getProperty("http.proxy.password");
-
-            HTTPConduit conduit = (HTTPConduit) client.getConduit();
-
-            if (host != null) {
-                conduit.getClient().setProxyServer(host);
-                if (port != null) {
-                    conduit.getClient().setProxyServerPort(Integer.parseInt(port));
-                }
-                if ((proxyUsername != null) && (proxyPassword != null)) {
-                    conduit.getProxyAuthorization().setUserName(proxyUsername);
-                    conduit.getProxyAuthorization().setPassword(proxyPassword);
-                }
-            }
-
-            String username = System.getProperty("http.user");
-            String password = System.getProperty("http.password");
-
-            if ((username != null) && (password != null)) {
-                LOG.fine("Set Auth header with: " + username + "/" + password);
-                AuthorizationPolicy auth = conduit.getAuthorization();
-                auth.setUserName(username);
-                auth.setPassword(password);
-            }
-
-            //HttpBasicAuthSupplier hbs = new HttpBasicAuthSupplier("me", "password");
-            //HttpAuthorization ha =
-
-            HTTPClientPolicy httpClientPolicy = conduit.getClient();
-            httpClientPolicy.setAllowChunking(false);
-            conduit.setClient(httpClientPolicy);
-
-            Endpoint ep = client.getEndpoint();
-            Service service = ep.getService();
-
-            EndpointInfo epfo = null;
-            for (ServiceInfo svcfo : service.getServiceInfos()) {
-                for (EndpointInfo e : svcfo.getEndpoints()) {
-                    BindingInfo bfo = e.getBinding();
-                    System.out.println("BindingInfo = " + bfo);
-
-                    if (bfo.getBindingId().equals("http://schemas.xmlsoap.org/wsdl/soap/")) {
-                        for (Object o : bfo.getExtensors().get()) {
-                            System.out.println("o = " + o);
-                            if (o instanceof SOAPBindingImpl) {
-                                SOAPBindingImpl soapB = (SOAPBindingImpl) o;
-                                if (soapB.getTransportURI().equals("http://schemas.xmlsoap.org/soap/http")) {
-                                    epfo = e;
-                                    break;
-                                }
-                            }
-                        }
-
+                    SSLSocket socket = (SSLSocket) ctx.getSocketFactory()
+                            .createSocket(url.getHost(), url.getPort());
+                    try {
+                        socket.startHandshake();
+                    } catch (SSLHandshakeException e) {
+                        System.out.println("Error during SSL handshake between client and server. If you enabled client authentication for the server, then you must pass keystore parameters to the client");
+                        e.printStackTrace();
                     }
+
+                    PrintWriter out = new PrintWriter(new BufferedWriter(new OutputStreamWriter(socket.getOutputStream())));
+                    out.println("GET " + url.getFile() + " HTTP/1.0");
+                    out.println();
+                    out.flush();
+
+                    if (out.checkError())
+                        System.out.println("SSLSocketClient: " + out.getClass().getName() + " error");
+
+                    BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+
+                    File myWsdl = File.createTempFile("wsdl", null);
+                    wsdl = myWsdl.getAbsolutePath();
+                    BufferedWriter wout = new BufferedWriter(new FileWriter(
+                            myWsdl));
+                    String inputLine;
+                    int i = 0;
+                    while ((inputLine = in.readLine()) != null)
+                        if (i++ > 3)
+                            wout.write(inputLine + "\n");
+
+                    in.close();
+                    wout.close();
+                    out.close();
+                    socket.close();
+
+                } catch (KeyManagementException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                } catch (NoSuchAlgorithmException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                } catch (UnknownHostException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                } catch (IOException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
                 }
+
+            } else if (url.getProtocol().equals("http")) {
+                wsdl = url.toString();
+            } else {
+                System.out.println("Unknown protocol " + url.getProtocol());
             }
-
-            // Settings of the TLSClientParameters for using https
-            //
-            if (ep.getEndpointInfo().getAddress().startsWith("https")){
-                LOG.fine("Setting TLSClientParameters");
-                TLSClientParameters tlsParams = new TLSClientParameters();
-                tlsParams.setSecureSocketProtocol("SSL");
-
-                FiltersType filters = new FiltersType();
-                filters.getInclude().add(".*_EXPORT_.*");
-                filters.getInclude().add(".*_EXPORT1024_.*");
-                filters.getInclude().add(".*_WITH_DES_.*");
-                filters.getInclude().add(".*_WITH_NULL_.*");
-                filters.getInclude().add(".*_DH_anon_.*");
-                filters.getInclude().add("SSL_RSA_WITH_RC4_128_MD5");
-                filters.getInclude().add("SSL_RSA_WITH_RC4_128_SHA");
-
-                tlsParams.setCipherSuitesFilter(filters);
-
-                conduit.setTlsClientParameters(tlsParams);
-            }
-/*
-            Endpoint ep = client.getEndpoint();
-            Map outProps = new HashMap();
-
-            outProps.put(WSHandlerConstants.ACTION, WSHandlerConstants.USERNAME_TOKEN);
-            outProps.put(WSHandlerConstants.USER, "MCFCDEVXML");
-            outProps.put(WSHandlerConstants.PASSWORD_TYPE, WSConstants.PW_DIGEST);
-            outProps.put(WSHandlerConstants.PW_CALLBACK_CLASS, ClientPasswordHandler.class.getName());
-
-            WSS4JOutInterceptor wssOut = new WSS4JOutInterceptor(outProps);
-            ep.getOutInterceptors().add(wssOut);
-            ep.getOutInterceptors().add(new SAAJOutInterceptor());
 
         } catch (MalformedURLException e1) {
-            e1.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-*/
+            wsdl = loc;
+        }
+    }
+
+
+    public void create() {
+
+        if (bssl)
+            configureSSL();
+
+        getWsdl();
+
+        try {
+            client = DynamicClientFactory.newInstance().createClient(wsdl, cl);
         } catch (Exception e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+
+        HTTPConduit conduit = (HTTPConduit) client.getConduit();
+
+        HTTPClientPolicy httpClientPolicy = conduit.getClient();
+        httpClientPolicy.setAllowChunking(false);
+        conduit.setClient(httpClientPolicy);
+
+        if (bssl)
+            enableSSL();
+        if (bmtom)
+            enableMtom();
+        if (bba)
+            enableBasicAuthentication();
+        if (bproxy)
+            enableProxy();
+
+    }
+
+    public void setMtom(Boolean bmtom) {
+        this.bmtom = bmtom;
+
+    }
+
+    private void enableMtom() {
+        client.getRequestContext().put("mtom-enabled", Boolean.TRUE);
+    }
+
+    public void setBasicAuthentication(Map<String, String> mba) {
+        bba = true;
+        this.mba = mba;
+    }
+
+    public void enableBasicAuthentication() {
+
+        HTTPConduit conduit = (HTTPConduit) client.getConduit();
+
+        String username = mba.get("http.user");
+        String password = mba.get("http.password");
+
+        if ((username != null) && (password != null)) {
+            AuthorizationPolicy auth = conduit.getAuthorization();
+            auth.setUserName(username);
+            auth.setPassword(password);
+        }
+    }
+
+    public void setProxy(Map<String, String> mproxy) {
+        this.mproxy = mproxy;
+        bproxy = true;
+    }
+
+    public void enableProxy() {
+
+        bproxy = true;
+
+        HTTPConduit conduit = (HTTPConduit) client.getConduit();
+
+        String host = mproxy.get("http.proxyHost");
+        String port = mproxy.get("http.proxyPort");
+        String proxyUsername = mproxy.get("http.proxy.user");
+        String proxyPassword = mproxy.get("http.proxy.password");
+
+        if (host != null) {
+            conduit.getClient().setProxyServer(host);
+            if (port != null) {
+                conduit.getClient().setProxyServerPort(Integer.parseInt(port));
+            }
+            if ((proxyUsername != null) && (proxyPassword != null)) {
+                conduit.getProxyAuthorization().setUserName(proxyUsername);
+                conduit.getProxyAuthorization().setPassword(proxyPassword);
+            }
+        }
+    }
+
+    public void setSSL(Map<String, String> mssl) {
+        this.mssl = mssl;
+        this.bssl = true;
+    }
+
+    public void setSSL() {
+
+        this.mssl = new HashMap<String, String>();
+        this.bssl = true;
+
+        String def_truststore = System.getProperty("java.home")
+                + "/lib/security/cacerts";
+        String def_truststore_pass = "changeit";
+
+        mssl.put("https.keystore", System.getProperty("https.keystore", ""));
+        mssl.put("https.keystore.pass", System.getProperty(
+                "https.keystore.pass", ""));
+        mssl.put("https.truststore", System.getProperty("https.truststore",
+                def_truststore));
+        mssl.put("https.truststore.pass", System.getProperty(
+                "https.truststore.pass", def_truststore_pass));
+    }
+
+    private void configureSSL() {
+
+        KeyStore keyStore = null;
+
+        String strKeystore = mssl.get("https.keystore");
+        String strKsPass = mssl.get("https.keystore.pass");
+        String strTruststore = mssl.get("https.truststore");
+        String strTsPass = mssl.get("https.truststore.pass");
+
+        try {
+            keyStore = KeyStore.getInstance("JKS");
+        } catch (KeyStoreException e1) {
+            // TODO Auto-generated catch block
+            e1.printStackTrace();
+        }
+
+        try {
+            if (strKeystore.compareTo("") > 0) {
+
+                File thekeystore = new File(strKeystore);
+                assert keyStore != null;
+                keyStore.load(new FileInputStream(thekeystore), strKsPass.toCharArray());
+                kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+                kmf.init(keyStore, strKsPass.toCharArray());
+            }
+
+            if (strTruststore.compareTo("") > 0) {
+
+                File thetruststore = new File(strTruststore);
+                assert keyStore != null;
+                keyStore.load(new FileInputStream(thetruststore), strTsPass.toCharArray());
+                tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+                tmf.init(keyStore);
+            }
+
+        } catch (KeyStoreException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (NoSuchAlgorithmException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (CertificateException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (FileNotFoundException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (UnrecoverableKeyException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (IOException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
 
     }
 
-    private class ClientPasswordHandler implements CallbackHandler {
+    private void enableSSL() {
 
-        /**
-         * @see javax.security.auth.callback.CallbackHandler#handle(javax.security.auth.callback.Callback[])
-         */
+        TLSClientParameters tlsParams = new TLSClientParameters();
 
-        public void handle(Callback[] callbacks) throws IOException, UnsupportedCallbackException {
+        tlsParams.setDisableCNCheck(true); // At least for development
+        if (kmf != null)
+            tlsParams.setKeyManagers(kmf.getKeyManagers());
+        if (tmf != null)
+            tlsParams.setTrustManagers(tmf.getTrustManagers());
 
-            for (int i = 0; i < callbacks.length; i++) {
-                if (callbacks[i] instanceof WSPasswordCallback) {
-                    WSPasswordCallback pc = (WSPasswordCallback) callbacks[i];
-                    // set the password given a username
-                    System.out.println("in callback " + callbacks[i] + " for " + pc.getIdentifer());
-                    String user = pc.getIdentifer();
+        FiltersType filters = new FiltersType();
+        filters.getInclude().add(".*_EXPORT_.*");
+        filters.getInclude().add(".*_EXPORT1024_.*");
+        filters.getInclude().add(".*_WITH_DES_.*");
+        filters.getInclude().add(".*_WITH_NULL_.*");
+        filters.getInclude().add(".*_DH_anon_.*");
 
-                    //String pass = userpas.get(pc.getIdentifer());
-                    System.out.println("for user " + user + " password [" + credential.get(user) + "] has been found");
+        tlsParams.setCipherSuitesFilter(filters);
 
-                    pc.setPassword(credential.get(user));
-                } else {
-                    throw new UnsupportedCallbackException(callbacks[i], "Unrecognized Callback");
-                }
-            }
-        }
-
+        HTTPConduit conduit = (HTTPConduit) client.getConduit();
+        conduit.setTlsClientParameters(tlsParams);
     }
+
 }
