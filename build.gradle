@@ -1,0 +1,192 @@
+//Updated for apache cxf 2.1.3 (necessary for MTOM attachments client side)
+
+usePlugin('java')
+
+//defaultTasks = ["dists"]
+defaultTasks = ["compile"]
+
+name="groovyws"
+group='groovyx.net.ws'
+version="0.4"
+
+type = 'jar'
+archivesBaseName=project.name
+archive_jar.baseName=project.name
+
+sourceCompatibility=1.5
+targetCompatibility=1.5
+
+buildDirName="build-all"
+
+buildTime=new Date()
+//libDir=new File(rootDir, 'lib')
+distsDirName="dists"
+
+manifest.mainAttributes(['Implementation-title': "groovyws", 'Implementation-Version': "$version"])
+
+cxfBaseDepsJDK6 = [
+	"commons-logging:commons-logging:1.1.1@jar", 
+	"org.apache.neethi:neethi:2.0.4@jar",
+	"com.sun.xml.bind:jaxb-impl:2.1.7@jar",
+	"net.java.dev.stax-utils:stax-utils:20060502@jar",
+	"org.apache.geronimo.specs:geronimo-ws-metadata_2.0_spec:1.1.2@jar",
+	"org.apache.geronimo.specs:geronimo-jaxws_2.1_spec:1.0@jar",
+	"org.apache.geronimo.specs:geronimo-javamail_1.4_spec:1.3@jar",
+	"org.apache.ws.commons.schema:XmlSchema:1.4.2@jar",
+	"wsdl4j:wsdl4j:1.6.2@jar",
+	"xml-resolver:xml-resolver:1.2@jar",
+	"com.sun.xml.bind:jaxb-xjc:2.1.6@jar" //bug in version 2.1.8! Use 2.1.7 or 2.1.6
+]
+
+cxfBaseDepsJDK5 = [
+	cxfBaseDepsJDK6,
+	"org.apache.geronimo.specs:geronimo-activation_1.1_spec:1.0.2@jar",
+	"org.apache.geronimo.specs:geronimo-annotation_1.0_spec:1.1.1@jar",
+	"org.apache.geronimo.specs:geronimo-stax-api_1.0_spec:1.0.1@jar",
+	"javax.xml.bind:jaxb-api:2.1@jar",
+	"org.codehaus.woodstox:wstx-asl:3.2.7@jar" //if forget jar, then download its own stax-api, and linkage error appear ... sooo long hours lost ...
+].flatten()
+
+cxfWsSecuritySupportDeps = [
+	"bouncycastle:bcprov-jdk15:140@jar",
+	"xalan:xalan:2.7.1@jar", 
+	"xalan:serializer:2.7.1@jar",
+	"org.apache.ws.security:wss4j:1.5.4@jar",
+	"org.apache.santuario:xmlsec:1.4.2@jar"
+]
+
+cxfAegisDeps = [
+	"jaxen:jaxen:1.1.1@jar",
+	"org.jdom:jdom:1.1@jar"
+]
+
+cxfJettyDeps = [
+	"org.apache.geronimo.specs:geronimo-servlet_2.5_spec:1.2@jar",
+	"org.mortbay.jetty:jetty:6.1.11@jar",
+	"org.mortbay.jetty:jetty-util:6.1.11@jar"
+]
+
+javav=System.getProperty('java.version')
+if(javav=~/^1.6/) cxfBaseDeps=cxfBaseDepsJDK6
+else cxfBaseDeps=cxfBaseDepsJDK5 
+
+groovywsCxfDeps = [
+	cxfBaseDeps,
+	cxfWsSecuritySupportDeps,
+	cxfAegisDeps,
+	cxfJettyDeps
+].flatten()
+
+groovywsOtherDeps = [
+	"jarjar:jarjar:0.2@jar",
+	"log4j:log4j:1.2.15@jar"
+]
+
+cxf_dist="org.apache.cxf:cxf-bundle:2.1.3@jar"
+groovy_all_dist="org.codehaus.groovy:groovy-all:1.5.6@jar"
+junit_dist="junit:junit:4.5@jar"
+ant_dist="org.apache.ant:ant:1.7.1@jar"
+
+signedJars=[]
+
+//Unsign a jar file, that is delete .dsa and .sf Jar's META-INF files
+def unsignJars(jarlist){
+	ant=new AntBuilder()
+	jarlist.each{ jarfile ->
+		ant.sequential {
+			tmpdir="tmp"
+			echo 'Unsign $jarfile ...'
+			unjar(src:jarfile, dest:tmpdir)
+			delete{
+				fileset(dir:tmpdir, includes:"META-INF/*.DSA, META-INF/*.SF, META-INF/*.RSA")
+			}
+			jar(destFile:jarfile, baseDir: tmpdir)
+			delete(dir:tmpdir)
+		}	
+	}
+}
+
+//Unsign bcprov library
+def unsignBcprov(jarfile){
+	def pattern = /bcprov/
+	if ( (jarfile =~ pattern) && !(jarfile in signedJars) ) {
+		unsignJars([jarfile])
+	}
+}
+
+
+init.dependsOn(":clean")
+
+//Use this build script without installing gradle
+createTask('wrapper', type: Wrapper).configure{
+	gradleVersion=0.4
+}
+
+
+dependencies {
+	//If all libs are on a local filesystem directory 'lib'
+	//addFlatDirResolver('lib', libDir)
+	//addFlatDirResolver('lib', "/Users/basileclout/Desktop/groovywslibs")
+	//addFlatDirResolver('lib',"/Users/basileclout/Desktop/eads/groovy/ws/libs/lib","/Users/basileclout/Desktop/groovywslibs")
+	
+	//To get packages from Maven2 repository on Internet, add main Maven repository
+	addMavenStyleRepo('maven2_spain','http://ftp.cica.es/mirrors/maven2/')
+	//addMavenStyleRepo('maven2_usa','http://mirrors.ibiblio.org/pub/mirrors/maven2/')
+
+	//standalone target = groovyws jar + some cxf dependency jars
+	addConfiguration('standalone')
+	//all target = standalone target without jetty server libraries
+	addConfiguration('all')
+	
+	//We select ourselves cxf's dependencies groovyws requires
+
+		//TODO: Not the best way to do it. Better would be to use client module instead of hard dependencies ... But requires handling of pom repositories failures (jsr173-ri) and selection of modules
+ 	
+	//'compile; target dependencies
+	compile cxf_dist, groovywsCxfDeps, groovy_all_dist, junit_dist, ant_dist
+	
+	//'standalone' target dependencies
+	standalone cxf_dist, groovywsCxfDeps
+	
+	//'all' target dependencies
+	all cxf_dist, cxfBaseDepsJDK5, cxfWsSecuritySupportDeps, cxfAegisDeps
+
+}
+
+//This task looks for Bouncycastle's bcprov cryptography librarie and unsign it
+createTask('unsignDependencies'){
+	
+	standalone_resolve = dependencies.resolve('standalone')
+	standalone_resolve.each{unsignBcprov(it); signedJars.add(it)}
+	//unsignJars(standalone_resolve)
+	
+	all_resolve = dependencies.resolve('all')	
+	all_resolve.each{unsignBcprov(it); signedJars.add(it)}
+	//unsignJars(all_resolve)
+}
+
+resources.destinationDir=file(buildDir.name+"/demos")
+resources.srcDirs=[file('src/demo/resources'), file('src/demo/groovy')]
+                    
+println "src = "+resources.getSrcDirs()
+println "dest = "+resources.getDestinationDir()
+
+
+dists.dependsOn('unsignDependencies')
+
+
+//groovyws.jar was implicitly created by the Java plugin in action 'libs'
+dists {
+	//Create groovyws-standalone jar
+	jar(appendix:"standalone"){
+		fileSet(dir: classesDir)
+		merge(dependencies.resolve('standalone'))
+		destinationDir=distsDir
+	}
+	//Create groovyws-all jar
+	jar(appendix:"all"){
+		fileSet(dir: classesDir)	
+		merge(dependencies.resolve('all'))
+		destinationDir=distsDir
+	}
+}
