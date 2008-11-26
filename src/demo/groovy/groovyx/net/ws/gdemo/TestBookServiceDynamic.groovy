@@ -26,7 +26,7 @@ hop.eachLine(){ fos.write(it+"\n")}
 fos.flush(); fos.close()
 
 proxy = new WSClient(myServiceUrl+"?wsdl", this.class.classLoader)
-proxy.create()
+proxy.initialize()
 
 //Adding books ...
 mybooks = proxy.getMyBooks()

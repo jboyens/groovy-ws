@@ -2,12 +2,12 @@
 
 usePlugin('java')
 
-//defaultTasks = ["dists"]
-defaultTasks = ["compile"]
+defaultTasks = ["dists"]
+//defaultTasks = ["compile"]
 
 name="groovyws"
 group='groovyx.net.ws'
-version="0.4"
+version="0.4.1"
 
 type = 'jar'
 archivesBaseName=project.name
@@ -28,14 +28,10 @@ cxfBaseDepsJDK6 = [
 	"commons-logging:commons-logging:1.1.1@jar", 
 	"org.apache.neethi:neethi:2.0.4@jar",
 	"com.sun.xml.bind:jaxb-impl:2.1.7@jar",
-	"net.java.dev.stax-utils:stax-utils:20060502@jar",
-	"org.apache.geronimo.specs:geronimo-ws-metadata_2.0_spec:1.1.2@jar",
-	"org.apache.geronimo.specs:geronimo-jaxws_2.1_spec:1.0@jar",
-	"org.apache.geronimo.specs:geronimo-javamail_1.4_spec:1.3@jar",
 	"org.apache.ws.commons.schema:XmlSchema:1.4.2@jar",
 	"wsdl4j:wsdl4j:1.6.2@jar",
 	"xml-resolver:xml-resolver:1.2@jar",
-	"com.sun.xml.bind:jaxb-xjc:2.1.6@jar" //bug in version 2.1.8! Use 2.1.7 or 2.1.6
+	"com.sun.xml.bind:jaxb-xjc:2.1.7@jar" //bug in version 2.1.8! Use 2.1.7 or 2.1.6
 ]
 
 cxfBaseDepsJDK5 = [
@@ -43,8 +39,14 @@ cxfBaseDepsJDK5 = [
 	"org.apache.geronimo.specs:geronimo-activation_1.1_spec:1.0.2@jar",
 	"org.apache.geronimo.specs:geronimo-annotation_1.0_spec:1.1.1@jar",
 	"org.apache.geronimo.specs:geronimo-stax-api_1.0_spec:1.0.1@jar",
-	"javax.xml.bind:jaxb-api:2.1@jar",
-	"org.codehaus.woodstox:wstx-asl:3.2.7@jar" //if forget jar, then download its own stax-api, and linkage error appear ... sooo long hours lost ...
+    "org.apache.geronimo.specs:geronimo-javamail_1.4_spec:1.3@jar",
+    "javax.xml.bind:jaxb-api:2.1@jar",
+	"org.codehaus.woodstox:wstx-asl:3.2.7@jar", //if forget jar, then download its own stax-api, and linkage error appear ... sooo long hours lost ...
+    "org.apache.geronimo.specs:geronimo-ws-metadata_2.0_spec:1.1.2@jar",
+    "org.apache.geronimo.specs:geronimo-jaxws_2.1_spec:1.0@jar",
+    "javax.xml.soap:saaj-api:1.3@jar",
+    "com.sun.xml.messaging.saaj:saaj-impl:1.3.2@jar",
+    "com.sun.xml.fastinfoset:FastInfoset:1.2.2@jar"    
 ].flatten()
 
 cxfWsSecuritySupportDeps = [
@@ -57,7 +59,8 @@ cxfWsSecuritySupportDeps = [
 
 cxfAegisDeps = [
 	"jaxen:jaxen:1.1.1@jar",
-	"org.jdom:jdom:1.1@jar"
+	"org.jdom:jdom:1.1@jar",
+    "net.java.dev.stax-utils:stax-utils:20060502@jar"
 ]
 
 cxfJettyDeps = [
@@ -67,8 +70,13 @@ cxfJettyDeps = [
 ]
 
 javav=System.getProperty('java.version')
-if(javav=~/^1.6/) cxfBaseDeps=cxfBaseDepsJDK6
-else cxfBaseDeps=cxfBaseDepsJDK5 
+if(javav=~/^1.6/) {
+        println "Java 6"
+        cxfBaseDeps=cxfBaseDepsJDK6
+} else {
+        println "java 5"
+        cxfBaseDeps=cxfBaseDepsJDK5
+}        
 
 groovywsCxfDeps = [
 	cxfBaseDeps,
@@ -140,16 +148,16 @@ dependencies {
 	
 	//We select ourselves cxf's dependencies groovyws requires
 
-		//TODO: Not the best way to do it. Better would be to use client module instead of hard dependencies ... But requires handling of pom repositories failures (jsr173-ri) and selection of modules
+	//TODO: Not the best way to do it. Better would be to use client module instead of hard dependencies ... But requires handling of pom repositories failures (jsr173-ri) and selection of modules
  	
 	//'compile; target dependencies
 	compile cxf_dist, groovywsCxfDeps, groovy_all_dist, junit_dist, ant_dist
 	
 	//'standalone' target dependencies
-	standalone cxf_dist, groovywsCxfDeps
+	standalone cxf_dist, cxfBaseDeps, cxfWsSecuritySupportDeps, cxfAegisDeps, cxfJettyDeps
 	
 	//'all' target dependencies
-	all cxf_dist, cxfBaseDepsJDK5, cxfWsSecuritySupportDeps, cxfAegisDeps
+	all cxf_dist, cxfBaseDeps, cxfWsSecuritySupportDeps, cxfAegisDeps
 
 }
 
@@ -168,8 +176,8 @@ createTask('unsignDependencies'){
 resources.destinationDir=file(buildDir.name+"/demos")
 resources.srcDirs=[file('src/demo/resources'), file('src/demo/groovy')]
                     
-println "src = "+resources.getSrcDirs()
-println "dest = "+resources.getDestinationDir()
+//println "src = "+resources.getSrcDirs()
+//println "dest = "+resources.getDestinationDir()
 
 
 dists.dependsOn('unsignDependencies')
@@ -187,6 +195,11 @@ dists {
 	jar(appendix:"all"){
 		fileSet(dir: classesDir)	
 		merge(dependencies.resolve('all'))
+		destinationDir=distsDir
+	}
+	//Create groovyws-all jar
+	jar(appendix:"minimal"){
+		fileSet(dir: classesDir)	
 		destinationDir=distsDir
 	}
 }

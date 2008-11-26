@@ -118,16 +118,18 @@ public class WSClient extends GroovyObjectSupport {
         mproxy.put("http.proxy.password", System.getProperty("http.proxy.password"));
     }
 
-    public WSClient(String loc, ClassLoader cl) {
 
+    public WSClient(String loc, ClassLoader cl) {
         this.cl = cl;
         this.loc = loc;
+    }
 
+    public void initialize() {
         URL url;
 
         try {
             url = new URL(loc);
-            if (url.getProtocol().equals("https"))
+            if (url.getProtocol().equals("https")&&!bssl)
                 setSSL();
         } catch (MalformedURLException e) {
             e.printStackTrace();
@@ -137,7 +139,37 @@ public class WSClient extends GroovyObjectSupport {
             initializeBa();
         if (bproxy)
             initializeProxy();
+
+        if (bssl)
+            configureSSL();
+
+        getWsdl();
+        System.out.println("wsdl >"+wsdl);
+
+        try {
+            client = DynamicClientFactory.newInstance().createClient(wsdl, cl);
+        } catch (Exception e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+
+        HTTPConduit conduit = (HTTPConduit) client.getConduit();
+
+        HTTPClientPolicy httpClientPolicy = conduit.getClient();
+        httpClientPolicy.setAllowChunking(false);
+        conduit.setClient(httpClientPolicy);
+
+        if (bssl)
+            enableSSL();
+        if (bmtom)
+            enableMtom();
+        if (bba)
+            enableBasicAuthentication();
+        if (bproxy)
+            enableProxy();
+
     }
+
 
     public void getWsdl() throws IllegalArgumentException {
         URL url;
@@ -224,41 +256,8 @@ public class WSClient extends GroovyObjectSupport {
         }
     }
 
-
-    public void create() {
-
-        if (bssl)
-            configureSSL();
-
-        getWsdl();
-
-        try {
-            client = DynamicClientFactory.newInstance().createClient(wsdl, cl);
-        } catch (Exception e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-
-        HTTPConduit conduit = (HTTPConduit) client.getConduit();
-
-        HTTPClientPolicy httpClientPolicy = conduit.getClient();
-        httpClientPolicy.setAllowChunking(false);
-        conduit.setClient(httpClientPolicy);
-
-        if (bssl)
-            enableSSL();
-        if (bmtom)
-            enableMtom();
-        if (bba)
-            enableBasicAuthentication();
-        if (bproxy)
-            enableProxy();
-
-    }
-
     public void setMtom(Boolean bmtom) {
         this.bmtom = bmtom;
-
     }
 
     private void enableMtom() {
@@ -271,7 +270,6 @@ public class WSClient extends GroovyObjectSupport {
     }
 
     public void enableBasicAuthentication() {
-
         HTTPConduit conduit = (HTTPConduit) client.getConduit();
 
         String username = mba.get("http.user");
@@ -290,7 +288,6 @@ public class WSClient extends GroovyObjectSupport {
     }
 
     public void enableProxy() {
-
         bproxy = true;
 
         HTTPConduit conduit = (HTTPConduit) client.getConduit();
@@ -318,7 +315,6 @@ public class WSClient extends GroovyObjectSupport {
     }
 
     public void setSSL() {
-
         this.mssl = new HashMap<String, String>();
         this.bssl = true;
 
@@ -336,7 +332,6 @@ public class WSClient extends GroovyObjectSupport {
     }
 
     private void configureSSL() {
-
         KeyStore keyStore = null;
 
         String strKeystore = mssl.get("https.keystore");
@@ -393,7 +388,6 @@ public class WSClient extends GroovyObjectSupport {
     }
 
     private void enableSSL() {
-
         TLSClientParameters tlsParams = new TLSClientParameters();
 
         tlsParams.setDisableCNCheck(true); // At least for development

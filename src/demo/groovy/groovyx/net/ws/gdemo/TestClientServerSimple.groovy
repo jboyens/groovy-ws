@@ -13,7 +13,7 @@ server.start()
 println "Http server started on port 9000"
 
 proxy = new WSClient(myServiceUrl+"?wsdl", this.class.classLoader)
-proxy.create();
+proxy.initialize();
 println "Http client started"
 
 addition = proxy.add(1.0 as double, 2.0 as double)

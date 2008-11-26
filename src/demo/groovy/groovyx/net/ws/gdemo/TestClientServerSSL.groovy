@@ -30,7 +30,7 @@ mapClient = [
              ]
 proxy = new WSClient(myServiceUrl+"?wsdl", this.class.classLoader)
 proxy.setSSL(mapClient)
-proxy.create()
+proxy.initialize()
 
 addition = proxy.add(2.0 as double, 5.0 as double)
 square = proxy.square(4.0 as double)
@@ -69,7 +69,7 @@ mapClient = [
 
 proxy = new WSClient(myServiceUrl+"?wsdl", this.class.classLoader)
 proxy.setSSL(mapClient)
-proxy.create()
+proxy.initialize()
 
 addition = proxy.add(54.0 as double, 98.0 as double)
 square = proxy.square(5.0 as double)
@@ -102,7 +102,7 @@ System.setProperty("https.keystore", "certs/myclientstore.jks")
 System.setProperty("https.keystore.pass", "basile")
 
 proxy = new WSClient(myServiceUrl+"?wsdl", this.class.classLoader)
-proxy.create()
+proxy.initialize()
 
 addition = proxy.add(1.0 as double, 2.0 as double)
 assert addition == 3.0

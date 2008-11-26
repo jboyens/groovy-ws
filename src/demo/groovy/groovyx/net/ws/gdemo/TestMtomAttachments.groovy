@@ -2,7 +2,7 @@ package groovyx.net.ws.gdemo
 
 import groovyx.net.ws.WSServer
 import groovyx.net.ws.WSClient
-import groovyx.net.ws.gdemo.services.DataService
+import groovyx.net.ws.gdemo.services.ImageService
 
 import java.io.FileWriter
 import javax.activation.DataHandler
@@ -22,10 +22,9 @@ if(!imgSource.exists()){
 println "Using file ${imgSource.absolutePath}"
 
 
-//For testing and checking if Mtom is enabled, enable logging with -Dcxf.config.file=build/cxf.xml
-myService = DataService.getName()
+// for testing and checking if Mtom is enabled, enable logging with -Dcxf.config.file=build/cxf.xml
+myService = ImageService.getName()
 myServiceUrl = "http://localhost:9000/"+myService
-
 
 server = new WSServer(myServiceUrl)
 server.setMtom(true)
@@ -34,39 +33,30 @@ println "Server started"
 
 proxy = new WSClient(myServiceUrl+"?wsdl", this.class.classLoader)
 proxy.setMtom(true)
-proxy.create()
+proxy.initialize()
 
 //Write wsdl on local filesystem
 fw = new FileWriter(myService+".wsdl")
 new URL(myServiceUrl+"?wsdl").eachLine(){fw.write(it+"\n")}
-fw.flush(); fw.close()
+fw.flush()
+fw.close()
 
-println "Mtom test: Server --> Client"
-//Server read file, client get it and write it on local filesystem
-proxy.loadData(imgSource.absolutePath)
+println "Read file locally and send it to the server"
+// Server read file, client get it and write it on local filesystem
+def bb = new File(imgSource.absolutePath).readBytes()
+def dh = new DataHandler(new ByteArrayDataSource(bb, "application/octet-stream"))
+
+proxy.putData(dh, "lenna.jpg")
+proxy.storeData()
+
+println "Modify image"
+proxy.findEdges()
+
+proxy.loadData("lenna.jpg")
 image = (Byte[]) proxy.getData()
 new FileOutputStream("dl_"+imgSource.name).write(image)
 assert image!=null
 
-println "Mtom test: Client --> Server"
-//Client loads a file, and uploads it to the server
-byte[] data = imgSource.readBytes()
-DataHandler dh = new DataHandler(new ByteArrayDataSource(data, "application/octet-stream"))
-bbname = "ul_"+imgSource.name
-proxy.saveData(dh, bbname)
-
-//Server operates on the file (use swirl from ImageMagick)
-res = proxy.opData()
-assert res == bbname
-
-println "Mtom test: get back a modified file Server --> Client"
-//Get the image and write it to the local filesystem
-image = (byte[]) proxy.getData()
-new FileOutputStream("dlul_"+imgSource.name).write(image)
-assert image!=null
-assert data!=image
-
-println "dlul_"+imgSource.name+" created! With Mtom of course ;)"
 //Stop server
 server.stop()
 

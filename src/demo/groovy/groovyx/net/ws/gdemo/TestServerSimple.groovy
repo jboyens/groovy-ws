@@ -3,6 +3,8 @@ package groovyx.net.ws.gdemo
 import groovyx.net.ws.WSServer
 import groovyx.net.ws.WSClient
 
+import groovyx.net.ws.gdemo.services.BookService
+
 println "Test 1: Simple http server"
 
 myService = BookService.getName()

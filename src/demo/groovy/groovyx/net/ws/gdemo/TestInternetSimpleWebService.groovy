@@ -6,7 +6,7 @@ import groovyx.net.ws.WSClient
 //TerraServer
 
 proxy = new WSClient("http://terraservice.net/TerraService.asmx?WSDL", this.class.classLoader)
-proxy.create()
+proxy.initialize()
 
 place = proxy.create("com.terraserver_usa.terraserver.Place")
 place.city="mountain view"
