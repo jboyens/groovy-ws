@@ -59,6 +59,7 @@ public class WSClient extends GroovyObjectSupport {
     private KeyManagerFactory kmf = null;
 
 
+    @Override
     public Object invokeMethod(String name, Object args) {
 
         Object[] args_a = InvokerHelper.asArray(args);
@@ -144,7 +145,6 @@ public class WSClient extends GroovyObjectSupport {
             configureSSL();
 
         getWsdl();
-        System.out.println("wsdl >"+wsdl);
 
         try {
             client = DynamicClientFactory.newInstance().createClient(wsdl, cl);
@@ -177,10 +177,8 @@ public class WSClient extends GroovyObjectSupport {
         try {
             url = new URL(loc);
 
-            if (url.getQuery().compareTo("wsdl") > 0)
-                throw new IllegalArgumentException(
-                        "Bad query. Expected 'wsdl', not '" + url.getQuery()
-                                + "'");
+            if (url.getQuery() != null && url.getQuery().compareTo("wsdl") > 0)
+                throw new IllegalArgumentException( "Bad query. Expected 'wsdl', not '" + url.getQuery() + "'");
 
             if (url.getProtocol().equals("https")) {
                 try {
@@ -197,8 +195,7 @@ public class WSClient extends GroovyObjectSupport {
                     else if (tmf == null)
                         ctx.init(kmf.getKeyManagers(), null, null);
 
-                    SSLSocket socket = (SSLSocket) ctx.getSocketFactory()
-                            .createSocket(url.getHost(), url.getPort());
+                    SSLSocket socket = (SSLSocket) ctx.getSocketFactory().createSocket(url.getHost(), url.getPort());
                     try {
                         socket.startHandshake();
                     } catch (SSLHandshakeException e) {
@@ -218,8 +215,7 @@ public class WSClient extends GroovyObjectSupport {
 
                     File myWsdl = File.createTempFile("wsdl", null);
                     wsdl = myWsdl.getAbsolutePath();
-                    BufferedWriter wout = new BufferedWriter(new FileWriter(
-                            myWsdl));
+                    BufferedWriter wout = new BufferedWriter(new FileWriter( myWsdl));
                     String inputLine;
                     int i = 0;
                     while ((inputLine = in.readLine()) != null)
@@ -318,17 +314,13 @@ public class WSClient extends GroovyObjectSupport {
         this.mssl = new HashMap<String, String>();
         this.bssl = true;
 
-        String def_truststore = System.getProperty("java.home")
-                + "/lib/security/cacerts";
+        String def_truststore = System.getProperty("java.home") + "/lib/security/cacerts";
         String def_truststore_pass = "changeit";
 
         mssl.put("https.keystore", System.getProperty("https.keystore", ""));
-        mssl.put("https.keystore.pass", System.getProperty(
-                "https.keystore.pass", ""));
-        mssl.put("https.truststore", System.getProperty("https.truststore",
-                def_truststore));
-        mssl.put("https.truststore.pass", System.getProperty(
-                "https.truststore.pass", def_truststore_pass));
+        mssl.put("https.keystore.pass", System.getProperty("https.keystore.pass", ""));
+        mssl.put("https.truststore", System.getProperty("https.truststore", def_truststore));
+        mssl.put("https.truststore.pass", System.getProperty("https.truststore.pass", def_truststore_pass));
     }
 
     private void configureSSL() {
