@@ -5,7 +5,7 @@ usePlugin('java')
 defaultTasks = ["dists"]
 //defaultTasks = ["compile"]
 
-name="groovyws"
+archivesBaseName="groovyws"
 group='groovyx.net.ws'
 version="0.4.1"
 
@@ -122,12 +122,11 @@ def unsignBcprov(jarfile){
     }
 }
 
-
 init.dependsOn(":clean")
 
 //Use this build script without installing gradle
 createTask('wrapper', type: Wrapper).configure{
-    gradleVersion=0.4
+    gradleVersion=0.5
 }
 
 
