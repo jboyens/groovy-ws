@@ -39,30 +39,32 @@ public class WSServer {
 	private String url;
 	private TrustManagerFactory tmf = null;
 	private KeyManagerFactory kmf = null;
-	
-	
+
+
 	public WSServer(){
-		sf = new ServerFactoryBean();
+		this.sf = new ServerFactoryBean();
 	}
-	
+
 	public WSServer(String service, String url){
 		this(url);
     }
-	
+
 	public WSServer(String url){
 		this();
 		try {
 			this.service = new URL(url).getPath().replaceFirst("/", "");
 			if( new URL(url).getProtocol().equals("https"))
-				setSSL();
+            {
+                setSSL();
+            }
 		} catch (MalformedURLException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		this.url = url;
-		
+
 	}
-	
+
 	public void setNode(String service, String url){
 		this.service = service;
 		this.url = url;
@@ -71,59 +73,63 @@ public class WSServer {
 	public void setMtom(Boolean bmtom){
 		this.bmtom = bmtom;
 	}
-	
+
 	public void setSSL() {
 		this.bssl = true;
 		this.mssl = new HashMap<String, String>();
-		
+
 		String def_truststore = System.getProperty("java.home")+ "/lib/security/cacerts";
 		String def_truststore_pass = "changeit";
 
-		mssl.put("https.keystore", System.getProperty("https.keystore", ""));
-		mssl.put("https.keystore.pass", System.getProperty("https.keystore.pass", ""));
-		mssl.put("https.truststore", System.getProperty("https.truststore", def_truststore));
-		mssl.put("https.truststore.pass", System.getProperty("https.truststore.pass", def_truststore_pass));
+		this.mssl.put("https.keystore", System.getProperty("https.keystore", ""));
+		this.mssl.put("https.keystore.pass", System.getProperty("https.keystore.pass", ""));
+		this.mssl.put("https.truststore", System.getProperty("https.truststore", def_truststore));
+		this.mssl.put("https.truststore.pass", System.getProperty("https.truststore.pass", def_truststore_pass));
 	}
-	
+
 	public void setSSL(Map<String, String> mssl){
-		this.bssl = true;
+        this.bssl = true;
 		this.mssl = mssl;
 	}
 
 	public void setClientAuthentication(Boolean bca) {
 		this.bca = bca;
 	}
-	
+
 	@SuppressWarnings("unchecked")
 	public void start(){
-		
+
 		AegisDatabinding aegisDb = new AegisDatabinding();
-    	
-    	if (bmtom){
+
+    	if (this.bmtom){
     		Map<String,Object> props = new HashMap<String, Object>();
       		props.put("mtom-enabled", Boolean.TRUE);
-        	sf.setProperties(props);
-        	
+        	this.sf.setProperties(props);
+
     		aegisDb.setMtomEnabled(true);
     	}
-    	
-    	sf.getServiceFactory().getServiceConfigurations().add(0, new GroovyConfiguration());		
+
+    	this.sf.getServiceFactory().getServiceConfigurations().add(0, new GroovyConfiguration());
 
     	TypeCreationOptions conf = aegisDb.getAegisContext().getTypeCreationOptions();
     	conf.setDefaultMinOccurs(1);
     	conf.setDefaultNillable(false);
-    	
-    	sf.getServiceFactory().setDataBinding(aegisDb);
 
-    	if(bssl){
+    	this.sf.getServiceFactory().setDataBinding(aegisDb);
+
+    	if(this.bssl){
     		configureSSL();
-    		
+
     		TLSServerParameters tlsParams = new TLSServerParameters();
-    		
-    		if(kmf!=null)
-    			tlsParams.setKeyManagers(kmf.getKeyManagers());
-    		if(tmf!=null)
-    			tlsParams.setTrustManagers(tmf.getTrustManagers());
+
+    		if (this.kmf != null)
+            {
+                tlsParams.setKeyManagers(this.kmf.getKeyManagers());
+            }
+    		if (this.tmf != null)
+            {
+                tlsParams.setTrustManagers(this.tmf.getTrustManagers());
+            }
 
     		FiltersType filters = new FiltersType();
     		filters.getInclude().add(".*_EXPORT_.*");
@@ -132,17 +138,17 @@ public class WSServer {
     		filters.getInclude().add(".*_WITH_NULL_.*");
     		filters.getInclude().add(".*_DH_anon_.*");
     		tlsParams.setCipherSuitesFilter(filters);
-    		
-    		if(bca){
+
+    		if(this.bca){
     			ClientAuthentication ca = new ClientAuthentication();
     			ca.setRequired(true);
     			ca.setWant(true);
     			tlsParams.setClientAuthentication(ca);
     		}
-    		
+
     		JettyHTTPServerEngineFactory factory = new JettyHTTPServerEngineFactory();
     		try {
-				factory.setTLSServerParametersForPort(new URL(url).getPort(), tlsParams);
+				factory.setTLSServerParametersForPort(new URL(this.url).getPort(), tlsParams);
 			} catch (MalformedURLException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -152,39 +158,39 @@ public class WSServer {
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
-			}	
+			}
     	}
-    	
-    	
+
+
     	GroovyClassLoader gcl = new GroovyClassLoader(this.getClass().getClassLoader());
     	try {
-			Class clazz = gcl.loadClass(service);
-			sf.setServiceClass(clazz);
-			sf.setAddress(url);
+			Class clazz = gcl.loadClass(this.service);
+			this.sf.setServiceClass(clazz);
+			this.sf.setAddress(this.url);
 		} catch (ClassNotFoundException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-    	
-    	sf.create();
+
+    	this.sf.create();
 	}
-	
-	
+
+
 	public void stop(){
 		try{
-			sf.getServer().stop();
-			sf.getBus().shutdown(true);
+			this.sf.getServer().stop();
+			this.sf.getBus().shutdown(true);
 		} catch (Exception e){
 			e.printStackTrace();
 		}
 	}
-	
+
 	private void configureSSL() {
 
-		String strKeystore = mssl.get("https.keystore");
-		String strKsPass = mssl.get("https.keystore.pass");
-		String strTruststore = mssl.get("https.truststore");
-		String strTsPass = mssl.get("https.truststore.pass");
+		String strKeystore = this.mssl.get("https.keystore");
+		String strKsPass = this.mssl.get("https.keystore.pass");
+		String strTruststore = this.mssl.get("https.truststore");
+		String strTsPass = this.mssl.get("https.truststore.pass");
 
 		KeyStore keyStore = null;
 
@@ -195,25 +201,23 @@ public class WSServer {
 			e1.printStackTrace();
 		}
 
-		try {
+        try {
 			if (strKeystore.compareTo("")>0) {
 				File thekeystore = new File(strKeystore);
                 assert keyStore != null;
                 keyStore.load(new FileInputStream(thekeystore), strKsPass.toCharArray());
-				kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
-				kmf.init(keyStore, strKsPass.toCharArray());
+				this.kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+				this.kmf.init(keyStore, strKsPass.toCharArray());
 			}
 
 			if (strTruststore.compareTo("")>0) {
-				
 				File thetruststore = new File(strTruststore);
-				FileInputStream myin = new FileInputStream(thetruststore);
                 assert keyStore != null;
-                keyStore.load(myin, strTsPass.toCharArray());
-				tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
-				tmf.init(keyStore);
+                keyStore.load(new FileInputStream(thetruststore), strTsPass.toCharArray());
+				this.tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+				this.tmf.init(keyStore);
 			}
-			
+
 		} catch (KeyStoreException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

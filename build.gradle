@@ -1,13 +1,13 @@
 //Updated for apache cxf 2.1.3 (necessary for MTOM attachments client side)
 
-usePlugin('java')
+usePlugin('groovy')
 
 defaultTasks = ["dists"]
 //defaultTasks = ["compile"]
 
 archivesBaseName="groovyws"
 group='groovyx.net.ws'
-version="0.4.1"
+version="0.5.0"
 
 type = 'jar'
 archivesBaseName=project.name
@@ -16,22 +16,22 @@ archive_jar.baseName=project.name
 sourceCompatibility=1.5
 targetCompatibility=1.5
 
-buildDirName="build-all"
+//buildDirName="build-all"
 
-buildTime=new Date()
-//libDir=new File(rootDir, 'lib')
-distsDirName="dists"
+//buildTime=new Date()
+////libDir=new File(rootDir, 'lib')
+//distsDirName="dists"
 
 manifest.mainAttributes(['Implementation-title': "groovyws", 'Implementation-Version': "$version"])
 
 cxfBaseDepsJDK6 = [
     "commons-logging:commons-logging:1.1.1@jar", 
     "org.apache.neethi:neethi:2.0.4@jar",
-    "com.sun.xml.bind:jaxb-impl:2.1.7@jar",
-    "org.apache.ws.commons.schema:XmlSchema:1.4.2@jar",
+    "com.sun.xml.bind:jaxb-impl:2.1.9@jar",
+    "org.apache.ws.commons.schema:XmlSchema:1.4.3@jar",
     "wsdl4j:wsdl4j:1.6.2@jar",
     "xml-resolver:xml-resolver:1.2@jar",
-    "com.sun.xml.bind:jaxb-xjc:2.1.7@jar" //bug in version 2.1.8! Use 2.1.7 or 2.1.6
+    "com.sun.xml.bind:jaxb-xjc:2.1.9@jar" //bug in version 2.1.8! Use 2.1.7 or 2.1.6
 ]
 
 cxfBaseDepsJDK5 = [
@@ -53,14 +53,14 @@ cxfWsSecuritySupportDeps = [
     "bouncycastle:bcprov-jdk15:140@jar",
     "xalan:xalan:2.7.1@jar", 
     "xalan:serializer:2.7.1@jar",
-    "org.apache.ws.security:wss4j:1.5.4@jar",
+    "org.apache.ws.security:wss4j:1.5.5@jar",
     "org.apache.santuario:xmlsec:1.4.2@jar"
 ]
 
 cxfAegisDeps = [
     "jaxen:jaxen:1.1.1@jar",
-    "org.jdom:jdom:1.1@jar",
-    "net.java.dev.stax-utils:stax-utils:20060502@jar"
+    "org.jdom:jdom:1.1@jar"//,
+//  "net.java.dev.stax-utils:stax-utils:20060502@jar"
 ]
 
 cxfJettyDeps = [
@@ -90,7 +90,7 @@ groovywsOtherDeps = [
     "log4j:log4j:1.2.15@jar"
 ]
 
-cxf_dist="org.apache.cxf:cxf-bundle:2.1.3@jar"
+cxf_dist="org.apache.cxf:cxf-bundle:2.1.4@jar"
 groovy_all_dist="org.codehaus.groovy:groovy-all:1.5.6@jar"
 junit_dist="junit:junit:4.5@jar"
 ant_dist="org.apache.ant:ant:1.7.1@jar"
@@ -129,20 +129,21 @@ createTask('wrapper', type: Wrapper).configure{
     gradleVersion=0.5
 }
 
-
 dependencies {
     //To get packages from Maven2 repository on Internet, add main Maven repository
-    addMavenStyleRepo('maven2_spain','http://ftp.cica.es/mirrors/maven2/')
-    //addMavenStyleRepo('maven2_usa','http://mirrors.ibiblio.org/pub/mirrors/maven2/')
+    //addMavenStyleRepo('maven2_spain','http://ftp.cica.es/mirrors/maven2/')
+    addMavenStyleRepo('maven2_usa','http://mirrors.ibiblio.org/pub/mirrors/maven2/')
 
     //standalone target = groovyws jar + some cxf dependency jars
     addConfiguration('standalone')
     //all target = standalone target without jetty server libraries
     addConfiguration('all')
+    addConfiguration('deployerJars')
     
     //We select ourselves cxf's dependencies groovyws requires
 
-    //TODO: Not the best way to do it. Better would be to use client module instead of hard dependencies ... But requires handling of pom repositories failures (jsr173-ri) and selection of modules
+    //TODO: Not the best way to do it. Better would be to use client module instead of hard dependencies ...
+    // But requires handling of pom repositories failures (jsr173-ri) and selection of modules
      
     //'compile; target dependencies
     compile cxf_dist, groovywsCxfDeps, groovy_all_dist, junit_dist, ant_dist
@@ -153,6 +154,7 @@ dependencies {
     //'all' target dependencies
     all cxf_dist, cxfBaseDeps, cxfWsSecuritySupportDeps, cxfAegisDeps
 
+    deployerJars "org.apache.maven.wagon:wagon-webdav:1.0-beta-2", "org.apache.maven.wagon:wagon-ssh:1.0-beta-2"
 }
 
 //This task looks for Bouncycastle's bcprov cryptography librarie and unsign it
@@ -173,9 +175,7 @@ resources.srcDirs=[file('src/demo/resources'), file('src/demo/groovy')]
 //println "src = "+resources.getSrcDirs()
 //println "dest = "+resources.getDestinationDir()
 
-
 dists.dependsOn('unsignDependencies')
-
 
 //groovyws.jar was implicitly created by the Java plugin in action 'libs'
 dists {
