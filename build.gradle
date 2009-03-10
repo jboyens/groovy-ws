@@ -7,7 +7,7 @@ defaultTasks = ["dists"]
 
 archivesBaseName="groovyws"
 group='groovyx.net.ws'
-version="0.5.0"
+version="0.5-SNAPSHOT"
 
 type = 'jar'
 archivesBaseName=project.name
@@ -131,8 +131,8 @@ createTask('wrapper', type: Wrapper).configure{
 
 dependencies {
     //To get packages from Maven2 repository on Internet, add main Maven repository
-    //addMavenStyleRepo('maven2_spain','http://ftp.cica.es/mirrors/maven2/')
-    addMavenStyleRepo('maven2_usa','http://mirrors.ibiblio.org/pub/mirrors/maven2/')
+    addMavenStyleRepo('maven2_spain','http://ftp.cica.es/mirrors/maven2/')
+    //addMavenStyleRepo('maven2_usa','http://mirrors.ibiblio.org/pub/mirrors/maven2/')
 
     //standalone target = groovyws jar + some cxf dependency jars
     addConfiguration('standalone')
@@ -154,7 +154,7 @@ dependencies {
     //'all' target dependencies
     all cxf_dist, cxfBaseDeps, cxfWsSecuritySupportDeps, cxfAegisDeps
 
-    deployerJars "org.apache.maven.wagon:wagon-webdav:1.0-beta-2", "org.apache.maven.wagon:wagon-ssh:1.0-beta-2"
+    deployerJars "org.apache.maven.wagon:wagon-webdav:1.0-beta-2"
 }
 
 //This task looks for Bouncycastle's bcprov cryptography librarie and unsign it
@@ -196,4 +196,26 @@ dists {
         fileSet(dir: classesDir)    
         destinationDir=distsDir
     }
+}
+
+uploadLibs {
+    uploadResolvers.addMavenDeployer('repo-deployer') {
+        addProtocolProviderJars(dependencies.resolve('deployerJars'))
+ 
+        repository(url: 'https://dav.codehaus.org/dist/groovy/distributions/groovyws/') {
+            authentication(userName: "${username}", password: "${password}")
+        }
+        snapshotRepository(url: 'https://dav.codehaus.org/dist/groovy/distributions/groovyws/') {
+            authentication(userName: "${username}", password: "${password}")
+        }
+    }
+}
+
+build.taskGraph.whenReady {graph ->
+    if (graph.hasTask(':release')) {
+        version = '0.5.0'
+    }
+}
+
+createTask('release', dependsOn: ['uploadLibs']) {
 }
