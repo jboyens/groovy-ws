@@ -42,7 +42,7 @@ public class ConnectionTimeoutHelper extends AbstractSettingHelper {
     /**
      * Sets the user and the password for the proxy authorization.
      *
-     * @param conduit .
+     * @param client .
      */
     @Override
     protected void configureClientParameters(Client client) {

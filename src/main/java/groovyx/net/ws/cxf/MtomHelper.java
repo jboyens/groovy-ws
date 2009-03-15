@@ -45,7 +45,7 @@ public class MtomHelper extends AbstractSettingHelper {
     /**
      * Sets the MTOM property in the request context.
      *
-     * @param conduit .
+     * @param client .
      */
     @Override
     protected void configureClientParameters(Client client) {

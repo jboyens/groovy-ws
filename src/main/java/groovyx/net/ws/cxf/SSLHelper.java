@@ -44,9 +44,10 @@ import org.apache.cxf.endpoint.Client;
  */
 public class SSLHelper extends AbstractSettingHelper {
     /**
-     * @param conduit The condiut to configure
+     * Default constructor
+     *
      */
-    public SSLHelper(/* WSClient client*/) {
+    public SSLHelper() {
     }
 
     /**

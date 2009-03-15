@@ -23,7 +23,6 @@ public class ProxyHelper extends AbstractSettingHelper
     /**
      * Default constructor
      *
-     * @param conduit The condiut to configure
      */
     public ProxyHelper(){
     }

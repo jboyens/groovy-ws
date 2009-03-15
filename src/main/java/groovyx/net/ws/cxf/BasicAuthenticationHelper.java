@@ -20,7 +20,8 @@ import org.apache.cxf.endpoint.Client;
 public class BasicAuthenticationHelper extends AbstractSettingHelper
 {
     /**
-     * @param conduit The condiut to configure
+     * Default constructor
+     *
      */
     public BasicAuthenticationHelper(){
     }

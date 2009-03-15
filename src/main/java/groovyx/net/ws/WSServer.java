@@ -1,25 +1,6 @@
 package groovyx.net.ws;
 
 import groovy.lang.GroovyClassLoader;
-
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.security.GeneralSecurityException;
-import java.security.KeyStore;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.security.UnrecoverableKeyException;
-import java.security.cert.CertificateException;
-import java.util.HashMap;
-import java.util.Map;
-
-import javax.net.ssl.KeyManagerFactory;
-import javax.net.ssl.TrustManagerFactory;
-
 import org.apache.cxf.aegis.databinding.AegisDatabinding;
 import org.apache.cxf.aegis.type.TypeCreationOptions;
 import org.apache.cxf.configuration.jsse.TLSServerParameters;
@@ -27,6 +8,19 @@ import org.apache.cxf.configuration.security.ClientAuthentication;
 import org.apache.cxf.configuration.security.FiltersType;
 import org.apache.cxf.frontend.ServerFactoryBean;
 import org.apache.cxf.transport.http_jetty.JettyHTTPServerEngineFactory;
+
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.TrustManagerFactory;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.security.*;
+import java.security.cert.CertificateException;
+import java.util.HashMap;
+import java.util.Map;
 
 public class WSServer {
 
@@ -40,7 +34,9 @@ public class WSServer {
 	private TrustManagerFactory tmf = null;
 	private KeyManagerFactory kmf = null;
 
-
+    /**
+     * Default constructor
+     */
 	public WSServer(){
 		this.sf = new ServerFactoryBean();
 	}
@@ -65,6 +61,12 @@ public class WSServer {
 
 	}
 
+    /**
+     * Attach a service class with its corresponding url
+     *
+     * @param service script implementing the business service  
+     * @param url url that should be used to connect to the service
+     */
 	public void setNode(String service, String url){
 		this.service = service;
 		this.url = url;
@@ -97,6 +99,9 @@ public class WSServer {
 	}
 
 	@SuppressWarnings("unchecked")
+    /**
+     * Start the server
+     */
 	public void start(){
 
 		AegisDatabinding aegisDb = new AegisDatabinding();

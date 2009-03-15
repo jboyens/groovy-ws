@@ -1,8 +1,14 @@
-//Updated for apache cxf 2.1.3 (necessary for MTOM attachments client side)
+import java.text.SimpleDateFormat
+import org.gradle.api.internal.dependencies.WebdavResolver
+
+buildTime = new Date()
+versionModifier = null
+
+distributionUploadUrl = null
 
 usePlugin('groovy')
 
-defaultTasks = ["dists"]
+//defaultTasks = ["dists"]
 //defaultTasks = ["compile"]
 
 archivesBaseName="groovyws"
@@ -198,6 +204,7 @@ dists {
     }
 }
 
+/*
 uploadLibs {
     uploadResolvers.addMavenDeployer('repo-deployer') {
         addProtocolProviderJars(dependencies.resolve('deployerJars'))
@@ -210,12 +217,26 @@ uploadLibs {
         }
     }
 }
+*/
 
-build.taskGraph.whenReady {graph ->
-    if (graph.hasTask(':release')) {
-        version = '0.5.0'
+uploadDists.doFirst {
+    it.uploadResolvers.add(new WebdavResolver()) {
+        name = 'groovywsReleases'
+        user = codehausUserName
+        userPassword = codehausUserPassword
+        addArtifactPattern("$distributionUploadUrl/[artifact]-[revision](-[classifier]).[ext]" as String)
     }
 }
 
-createTask('release', dependsOn: ['uploadLibs']) {
+build.taskGraph.whenReady {graph ->
+    if (graph.hasTask(':release')) {
+        versionModifier = ''
+        distributionUploadUrl = 'https://dav.codehaus.org/dist/groovy/distributions/groovyws'
+    } else {
+        versionModifier = new SimpleDateFormat('yyyyMMddHHmmssZ').format(buildTime)
+        distributionUploadUrl = 'https://dav.codehaus.org/snapshots.dist/groovy/distributions/groovyws'
+    }
+}
+
+createTask('release', dependsOn: ['uploadDists']) {
 }
