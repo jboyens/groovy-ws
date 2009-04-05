@@ -7,7 +7,6 @@ import java.net.URL;
 import java.util.Map;
 
 import org.apache.cxf.transport.http.HTTPConduit;
-import org.apache.cxf.transport.Conduit;
 import org.apache.cxf.transports.http.configuration.HTTPClientPolicy;
 
 /**
@@ -32,7 +31,6 @@ public class WSClient extends AbstractCXFWSClient
      */
     protected ClassLoader classloader;
 
-
     /**
      * Default constructor.
      *
@@ -55,15 +53,28 @@ public class WSClient extends AbstractCXFWSClient
         this.basicAuthHelper         = new BasicAuthenticationHelper();
         this.mtomHelper              = new MtomHelper();
         this.connectionTimeoutHelper = new ConnectionTimeoutHelper();
+        this.soapHelper              = new SoapHelper();
     }
+
+    /**
+     * Default constructor.
+     *
+     * @param wsdlLocation The url of the wsdl-file
+     * @param classloader  The classoader
+     * @param soapVersion  The preferred SOAP version
+     */
+    public WSClient(String wsdlLocation, ClassLoader classloader, SoapVersion soapVersion) {
+        this(wsdlLocation, classloader);
+        this.soapHelper.setPreferredSoapVersion(soapVersion);
+    }
+
 
     /**
      * Configures the configuration for the transport of the client connection.
      *
      * @param conduit The conduit that need to be modified
      */
-    private void configureHttpClientPolicy(HTTPConduit conduit)
-    {
+    private void configureHttpClientPolicy(HTTPConduit conduit) {
         HTTPClientPolicy httpClientPolicy = conduit.getClient();
         httpClientPolicy.setAllowChunking(false);
 
@@ -93,6 +104,8 @@ public class WSClient extends AbstractCXFWSClient
 
         this.client = createClient(url, this.classloader);
 
+        this.soapHelper.enable(this.client);
+
         conduit = (HTTPConduit) this.client.getConduit();
 
         this.proxyHelper.enable(this.client);
@@ -114,7 +127,7 @@ public class WSClient extends AbstractCXFWSClient
      *
      * @see ProxyHelper#setProperties(Map)
      */
-    public void setProxyProperties(Map<String, String> proxyProperties){
+    public void setProxyProperties(Map<String, String> proxyProperties) {
         this.proxyHelper.setProperties(proxyProperties);
     }
 
@@ -125,7 +138,7 @@ public class WSClient extends AbstractCXFWSClient
      *
      * @see SSLHelper#setProperties(Map)
      */
-    public void setSSLProperties(Map<String, String> sslProperties){
+    public void setSSLProperties(Map<String, String> sslProperties) {
         this.sslHelper.setProperties(sslProperties);
     }
 
@@ -155,4 +168,10 @@ public class WSClient extends AbstractCXFWSClient
         this.connectionTimeoutHelper.setConnectionTimeout(timeout);
     }
 
+    /**
+     * @param soapVersion The SOAP version as define in {@link SoapVersion}.
+     */
+    public void setPreferredSoapVersion(SoapVersion soapVersion) {
+        this.soapHelper.setPreferredSoapVersion(soapVersion);
+    }
 }

@@ -54,6 +54,11 @@ public abstract class AbstractCXFWSClient extends GroovyObjectSupport implements
     protected MtomHelper mtomHelper;
 
     /**
+     * A helper to set the SOAP configuration.
+     */
+    protected SoapHelper soapHelper;
+
+    /**
      * @return The logger for the class
      */
     protected Logger getLogger() {
@@ -76,7 +81,7 @@ public abstract class AbstractCXFWSClient extends GroovyObjectSupport implements
             }
 
             if (getLogger().isLoggable(Level.FINE)) {
-                getLogger().fine("Invoke, operation info: " + op + ", objs: " + objs.toString());
+                getLogger().warning("Invoke, operation info: " + op + ", objs: " + objs.toString());
             }
 
             Object[] response;
@@ -119,7 +124,8 @@ public abstract class AbstractCXFWSClient extends GroovyObjectSupport implements
      * @see AbstractCXFWSClient#invokeMethod(String, Object)
      */
     protected final BindingOperationInfo getBindingOperationInfo(QName qname) {
-        return this.client.getEndpoint().getEndpointInfo().getBinding().getOperation(qname);
+        getLogger().warning(" Using SOAP version: " + this.soapHelper.getBinding().getSoapVersion().getVersion());
+        return this.soapHelper.getBinding().getOperation(qname);
     }
 
     /**
@@ -164,23 +170,25 @@ public abstract class AbstractCXFWSClient extends GroovyObjectSupport implements
     /**
      * The cxf-implementation of {@link IWSClient}.
      *
-     * @param url The url of the wsdl-file
-     * @param cl  The classloader
+     * @param args : url (The url of the wsdl-file), cl (The classloader)
      * @see groovyx.net.ws.IWSClient#createClient(java.lang.Object[])
      */
     public Client createClient(Object... args) {
 
-        if (args.length != 2) {
-            throw new IllegalArgumentException("Parameters are not set properly.");
-        }
+//        if (classLoader == null) {
+//            classLoader = Thread.currentThread().getContextClassLoader();
+//        }
 
-        if(args[0] instanceof URL) {
+        if (args[0] instanceof URL) {
             URL url = (URL) args[0];
 
-            return DynamicClientFactory.newInstance().createClient(url.toExternalForm(), (ClassLoader) args[1]);
-        }
+            if (args.length == 2) {
+                return DynamicClientFactory.newInstance().createClient(url.toExternalForm(), (ClassLoader) args[1]);
+            }
 
-        throw new IllegalArgumentException("WSDL is not valid");
+            throw new IllegalArgumentException("Parameters are not set properly.");
+        }
+        return null;
     }
 
 }
