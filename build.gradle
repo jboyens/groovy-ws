@@ -77,7 +77,7 @@ cxfJettyDeps = [
     "org.mortbay.jetty:jetty-util:6.1.15@jar"
 ]
 
-javav=System.getProperty('java.version')
+javav=System.getProperty("java.version")
 if(javav=~/^1.6/) {
         println "Java 6"
         cxfBaseDeps=cxfBaseDepsJDK6
@@ -161,9 +161,9 @@ createTask('wrapper', type: Wrapper).configure{
 dependencies {
     //To get packages from Maven2 repository on Internet, add main Maven repository
     addMavenStyleRepo('codehaus','http://repository.codehaus.org/')
-    addMavenStyleRepo('maven2_usa','http://mirrors.ibiblio.org/pub/mirrors/maven2/')
+    addMavenStyleRepo('ibiblio','http://mirrors.ibiblio.org/pub/mirrors/maven2/')
     addMavenStyleRepo('apache','http://people.apache.org/repo/m2-ibiblio-rsync-repository/')
-    //addMavenStyleRepo('ibiblio','http://www.ibiblio.org/maven/')
+    addMavenStyleRepo('maven','http://repo2.maven.org/maven2/')
 
     //standalone target = groovyws jar + some cxf dependency jars
     addConfiguration('standalone')
