@@ -9,7 +9,8 @@ class BookServiceDynamicTest extends GroovyTestCase {
     private myService = BookService.getName()
     private myServiceUrl = "http://localhost:9000/"+myService
     private bookClass = "myservice.Book" 
-    private aosClass="org.apache.cxf.arrays.ArrayOfString"
+//  private aosClass="org.apache.cxf.arrays.ArrayOfString"
+    private aosClass="groovyx.net.ws.gdemo.services.ArrayOfString"
 
     private server
     private proxy
@@ -29,6 +30,18 @@ class BookServiceDynamicTest extends GroovyTestCase {
         book = proxy.create(bookClass)
         aos  = proxy.create(aosClass)
 
+        println book.class.name
+        book.class.fields.each{println it.name}
+        book.class.methods.each{
+            println it.name
+            println it.returnType.name
+        }
+        println "---------------"
+        aos.class.methods.each{
+            println it.name
+            println it.returnType.name
+        }
+
         book.title="Groovy in Action"
         book.isbn="1-932394-84-2"
         aos.string=["Dierk"]
@@ -47,7 +60,18 @@ class BookServiceDynamicTest extends GroovyTestCase {
     void testAddBook() {
         aob = proxy.getMyBooks()
         assert aob.book[0].title == "Groovy in Action"
-        assert aob.book[1].authors.string == ["David A. Chappell", "Tyler Jewell"]
+        aob.book[1].authors.class.fields.each{println it.name}
+        println ">"+aob.book[1].title+"<"
+        println ">"+aob.book[1].authors.string+"<"
+        println ">"+aob.book[1].authors.string[0]+"<"
+        println aob.book[1].authors.string.size()
+        assert aob.book[1].authors.string.size() == 2
+        //assertContains("David A. Chappell",  aob.book[1].authors.string)
+        println ">"+aob.book[1].authors.string[0]+"<"
+        assertEquals(aob.book[1].authors.string[0], "David A. Chappell")
+        println ">"+aob.book[1].authors.string[1]+"<"
+        assert aob.book[1].authors.string[1] == "Tyler Jewell"
+        //assert aob.book[1].authors.string == ["David A. Chappell", "Tyler Jewell"]
         assert aob.book[0].year == 2007
         assert proxy.findBook("1-932394-84-2").title == "Groovy in Action"
     }

@@ -9,6 +9,8 @@ public class BookService {
 	}
 	
 	void addBook(Book b){
+        println b.title
+        println b.authors
 		books+=b
 	}
 	
