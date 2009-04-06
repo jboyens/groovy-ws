@@ -12,8 +12,10 @@ usePlugin('groovy')
 //defaultTasks = ["compile"]
 
 archivesBaseName="groovyws"
+//http://snapshots.repository.codehaus.org/org/codehaus/groovy/
+//http://repository.codehaus.org/org/codehaus/groovy/http-builder/
 group='groovyx.net.ws'
-version="0.5-SNAPSHOT"
+version="0.5-RC1"
 
 type = 'jar'
 archivesBaseName=project.name
@@ -34,7 +36,7 @@ cxfBaseDepsJDK6 = [
     "commons-logging:commons-logging:1.1.1@jar", 
     "org.apache.neethi:neethi:2.0.4@jar",
     "com.sun.xml.bind:jaxb-impl:2.1.9@jar",
-    "org.apache.ws.commons.schema:XmlSchema:1.4.3@jar",
+    "org.apache.ws.commons.schema:XmlSchema:1.4.4@jar",
     "wsdl4j:wsdl4j:1.6.2@jar",
     "xml-resolver:xml-resolver:1.2@jar",
     "com.sun.xml.bind:jaxb-xjc:2.1.9@jar" //bug in version 2.1.8! Use 2.1.7 or 2.1.6
@@ -45,9 +47,9 @@ cxfBaseDepsJDK5 = [
     "org.apache.geronimo.specs:geronimo-activation_1.1_spec:1.0.2@jar",
     "org.apache.geronimo.specs:geronimo-annotation_1.0_spec:1.1.1@jar",
     "org.apache.geronimo.specs:geronimo-stax-api_1.0_spec:1.0.1@jar",
-    "org.apache.geronimo.specs:geronimo-javamail_1.4_spec:1.3@jar",
+    "org.apache.geronimo.specs:geronimo-javamail_1.4_spec:1.5@jar",
     "javax.xml.bind:jaxb-api:2.1@jar",
-    "org.codehaus.woodstox:wstx-asl:3.2.7@jar", //if forget jar, then download its own stax-api, and linkage error appear ... sooo long hours lost ...
+    "org.codehaus.woodstox:wstx-asl:3.2.6@jar", //if forget jar, then download its own stax-api, and linkage error appear ... sooo long hours lost ...
     "org.apache.geronimo.specs:geronimo-ws-metadata_2.0_spec:1.1.2@jar",
     "org.apache.geronimo.specs:geronimo-jaxws_2.1_spec:1.0@jar",
     "javax.xml.soap:saaj-api:1.3@jar",
@@ -59,7 +61,7 @@ cxfWsSecuritySupportDeps = [
     "bouncycastle:bcprov-jdk15:140@jar",
     "xalan:xalan:2.7.1@jar", 
     "xalan:serializer:2.7.1@jar",
-    "org.apache.ws.security:wss4j:1.5.5@jar",
+    "org.apache.ws.security:wss4j:1.5.6@jar",
     "org.apache.santuario:xmlsec:1.4.2@jar"
 ]
 
@@ -71,8 +73,8 @@ cxfAegisDeps = [
 
 cxfJettyDeps = [
     "org.apache.geronimo.specs:geronimo-servlet_2.5_spec:1.2@jar",
-    "org.mortbay.jetty:jetty:6.1.11@jar",
-    "org.mortbay.jetty:jetty-util:6.1.11@jar"
+    "org.mortbay.jetty:jetty:6.1.15@jar",
+    "org.mortbay.jetty:jetty-util:6.1.15@jar"
 ]
 
 javav=System.getProperty('java.version')
@@ -92,12 +94,33 @@ groovywsCxfDeps = [
 ].flatten()
 
 groovywsOtherDeps = [
-    "jarjar:jarjar:0.2@jar",
+//  "jarjar:jarjar:0.2@jar",
     "log4j:log4j:1.2.15@jar"
 ]
 
-cxf_dist="org.apache.cxf:cxf-bundle:2.1.4@jar"
-groovy_all_dist="org.codehaus.groovy:groovy-all:1.5.6@jar"
+cxf_dist = [
+//    "org.apache.cxf:cxf-bundle:2.1.4@jar"
+    "org.apache.cxf:cxf-bundle:2.2@jar"
+].flatten()
+/*
+cxf_dist = [
+    "org.apache.cxf:cxf-api:2.2@jar",
+    "org.apache.cxf:cxf-common-utilities:2.2@jar",
+    "org.apache.cxf:cxf-rt-bindings-soap:2.2@jar",
+    "org.apache.cxf:cxf-rt-core:2.2@jar",
+    "org.apache.cxf:cxf-rt-databinding-aegis:2.2@jar",
+    "org.apache.cxf:cxf-rt-databinding-jaxb:2.2@jar",
+    "org.apache.cxf:cxf-rt-transports-http:2.2@jar",
+    "org.apache.cxf:cxf-rt-transports-http-jetty:2.2@jar",
+    "org.apache.cxf:cxf-rt-frontend-jaxrs:2.2@jar",
+    "org.apache.cxf:cxf-rt-frontend-jaxws:2.2@jar",
+    "org.apache.cxf:cxf-rt-frontend-simple:2.2@jar",
+    "org.apache.cxf:cxf-tools-common:2.2@jar"
+].flatten()
+*/
+
+groovy_all_dist="org.codehaus.groovy:groovy-all:1.5.7@jar"
+//groovy_all_dist="org.codehaus.groovy:groovy-all:1.6.0@jar"
 junit_dist="junit:junit:4.5@jar"
 ant_dist="org.apache.ant:ant:1.7.1@jar"
 
@@ -137,8 +160,10 @@ createTask('wrapper', type: Wrapper).configure{
 
 dependencies {
     //To get packages from Maven2 repository on Internet, add main Maven repository
-    addMavenStyleRepo('maven2_spain','http://ftp.cica.es/mirrors/maven2/')
-    //addMavenStyleRepo('maven2_usa','http://mirrors.ibiblio.org/pub/mirrors/maven2/')
+    addMavenStyleRepo('codehaus','http://repository.codehaus.org/')
+    addMavenStyleRepo('maven2_usa','http://mirrors.ibiblio.org/pub/mirrors/maven2/')
+    addMavenStyleRepo('apache','http://people.apache.org/repo/m2-ibiblio-rsync-repository/')
+    //addMavenStyleRepo('ibiblio','http://www.ibiblio.org/maven/')
 
     //standalone target = groovyws jar + some cxf dependency jars
     addConfiguration('standalone')
@@ -150,6 +175,8 @@ dependencies {
 
     //TODO: Not the best way to do it. Better would be to use client module instead of hard dependencies ...
     // But requires handling of pom repositories failures (jsr173-ri) and selection of modules
+
+    testRuntime "org.apache.ant:ant-javamail:1.7.1@jar"
      
     //'compile; target dependencies
     compile cxf_dist, groovywsCxfDeps, groovy_all_dist, junit_dist, ant_dist
@@ -212,12 +239,18 @@ uploadLibs {
         repository(url: 'https://dav.codehaus.org/dist/groovy/distributions/groovyws/') {
             authentication(userName: "${username}", password: "${password}")
         }
+
         snapshotRepository(url: 'https://dav.codehaus.org/dist/groovy/distributions/groovyws/') {
             authentication(userName: "${username}", password: "${password}")
         }
     }
 }
 */
+uploadLibs {
+    uploadResolvers.addMavenDeployer('maven-deployer') {
+        repository(url: "file://localhost/tmp/myRepo/")
+    }
+}
 
 uploadDists.doFirst {
     it.uploadResolvers.add(new WebdavResolver()) {
