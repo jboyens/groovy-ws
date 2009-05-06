@@ -1,7 +1,5 @@
 package groovyx.net.ws.cxf;
 
-import groovyx.net.ws.WSClient;
-
 import java.util.Map;
 
 import org.apache.cxf.endpoint.Client;
@@ -11,14 +9,10 @@ import org.apache.cxf.endpoint.Client;
  * properties of a {@link Client}
  *
  * @author <a href="mailto:groovy@courson.de">Dennis Bayer</a>
- * @version 05.03.2009
+ * 
+ * @since 0.5
  */
-public abstract class AbstractSettingHelper
-{
-    /**
-     * The conduit to configure.
-     */
-    //protected WSClient client;
+public abstract class AbstractSettingHelper {
 
     /**
      * Stores the properties.
@@ -26,23 +20,11 @@ public abstract class AbstractSettingHelper
     protected Map<String, String> properties;
 
     /**
-     * Default constructor.
-     *
-     * @param conduit The conduit to configure
-     */
-    //protected AbstractSettingHelper(WSClient client)
-    //{
-    //    this.client = client;
-    //}
-
-    /**
      * Initializes the setting. If no properties were set externally,
      * the default properties are used.
      */
-    public void initialize()
-    {
-        if (!isConfigured())
-        {
+    public void initialize() {
+        if (!isConfigured()) {
             setDefaultProperties();
         }
     }
@@ -51,8 +33,7 @@ public abstract class AbstractSettingHelper
      * @return <code>true</code> if the properties are already set,
      *         otherwise <code>false</code>.
      */
-    protected boolean isConfigured()
-    {
+    protected boolean isConfigured() {
         return this.properties != null && !this.properties.isEmpty();
     }
 
@@ -61,8 +42,7 @@ public abstract class AbstractSettingHelper
      *
      * @param properties The map containing the properties.
      */
-    public void setProperties(Map<String, String> properties)
-    {
+    public void setProperties(Map<String, String> properties) {
         this.properties = properties;
     }
 
@@ -83,7 +63,7 @@ public abstract class AbstractSettingHelper
      *
      * @param client The CXF client on which to enable the properties
      */
-    public  void enable(Client client) {
+    public void enable(Client client) {
         configureClientParameters(client);
     }
 

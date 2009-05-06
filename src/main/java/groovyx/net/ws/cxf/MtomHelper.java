@@ -1,36 +1,25 @@
 package groovyx.net.ws.cxf;
 
-import java.util.HashMap;
-
-import groovyx.net.ws.WSClient;
-
 import org.apache.cxf.endpoint.Client;
-import org.apache.cxf.transport.http.HTTPConduit;
 
 /**
  * Helper class to configure the MTOM settings.
  *
- * Created by IntelliJ IDEA.
- * User: alleon
- * Date: Mar 10, 2009
- * Time: 9:31:54 AM
- * To change this template use File | Settings | File Templates.
+ * @author <a href="mailto:guillaume.alleon@gmail.com">Tog</a>
+ * 
+ * @since 0.5
  */
-
 public class MtomHelper extends AbstractSettingHelper {
-    private boolean isMtom;
 
     /**
-     * Default constructor
-     *
+     * Flag to indicate whether Mtom should be used. 
      */
-    public MtomHelper() {
-    }
+    private boolean isMtom = false;
 
     /**
      * @param isMtom <code>true</code> if mtom is enabled, otherwise <code>false</code>.
      */
-    public void setMtom(boolean isMtom){
+    public void setMtom(boolean isMtom) {
         this.isMtom = isMtom;
     }
 
@@ -45,11 +34,12 @@ public class MtomHelper extends AbstractSettingHelper {
     /**
      * Sets the MTOM property in the request context.
      *
-     * @param client .
+     * @param client The client to configure.
      */
     @Override
     protected void configureClientParameters(Client client) {
-        client.getRequestContext().put("mtom-enabled", Boolean.valueOf(isMtom));
+        client.getRequestContext().put("mtom-enabled",
+                this.isMtom);
     }
 
 }

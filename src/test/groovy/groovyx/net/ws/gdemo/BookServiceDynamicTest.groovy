@@ -9,8 +9,8 @@ class BookServiceDynamicTest extends GroovyTestCase {
     private myService = BookService.getName()
     private myServiceUrl = "http://localhost:9000/"+myService
     private bookClass = "myservice.Book" 
-//  private aosClass="org.apache.cxf.arrays.ArrayOfString"
-    private aosClass="groovyx.net.ws.gdemo.services.ArrayOfString"
+    private aosClass="org.apache.cxf.arrays.ArrayOfString"
+//    private aosClass="groovyx.net.ws.gdemo.services.ArrayOfString"
 
     private server
     private proxy

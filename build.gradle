@@ -9,13 +9,14 @@ distributionUploadUrl = null
 usePlugin('groovy')
 
 //defaultTasks = ["dists"]
-//defaultTasks = ["compile"]
+defaultTasks = ["compile"]
 
-archivesBaseName="groovyws"
+//archivesBaseName="groovyws"
 //http://snapshots.repository.codehaus.org/org/codehaus/groovy/
 //http://repository.codehaus.org/org/codehaus/groovy/http-builder/
-group='groovyx.net.ws'
-version="0.5-RC1"
+group='org.codehaus.groovy.modules'
+version="0.5.1-SNAPSHOT"
+//version="0.5.0"
 
 type = 'jar'
 archivesBaseName=project.name
@@ -99,8 +100,8 @@ groovywsOtherDeps = [
 ]
 
 cxf_dist = [
-//    "org.apache.cxf:cxf-bundle:2.1.4@jar"
-    "org.apache.cxf:cxf-bundle:2.2@jar"
+    "org.apache.cxf:cxf-bundle:2.1.4@jar"
+//    "org.apache.cxf:cxf-bundle:2.2@jar"
 ].flatten()
 /*
 cxf_dist = [
@@ -155,7 +156,7 @@ init.dependsOn(":clean")
 
 //Use this build script without installing gradle
 createTask('wrapper', type: Wrapper).configure{
-    gradleVersion=0.5
+    gradleVersion="0.5.2"
 }
 
 dependencies {
@@ -205,9 +206,6 @@ createTask('unsignDependencies'){
 resources.destinationDir=file(buildDir.name+"/demos")
 resources.srcDirs=[file('src/demo/resources'), file('src/demo/groovy')]
                     
-//println "src = "+resources.getSrcDirs()
-//println "dest = "+resources.getDestinationDir()
-
 dists.dependsOn('unsignDependencies')
 
 //groovyws.jar was implicitly created by the Java plugin in action 'libs'
@@ -231,32 +229,25 @@ dists {
     }
 }
 
-/*
 uploadLibs {
     uploadResolvers.addMavenDeployer('repo-deployer') {
         addProtocolProviderJars(dependencies.resolve('deployerJars'))
- 
-        repository(url: 'https://dav.codehaus.org/dist/groovy/distributions/groovyws/') {
+
+        repository(url: 'dav:https://dav.codehaus.org/repository/gmod/') {
             authentication(userName: "${username}", password: "${password}")
         }
 
-        snapshotRepository(url: 'https://dav.codehaus.org/dist/groovy/distributions/groovyws/') {
+        snapshotRepository(url: 'dav:https://dav.codehaus.org/snapshots.repository/gmod/') {
             authentication(userName: "${username}", password: "${password}")
         }
-    }
-}
-*/
-uploadLibs {
-    uploadResolvers.addMavenDeployer('maven-deployer') {
-        repository(url: "file://localhost/tmp/myRepo/")
     }
 }
 
 uploadDists.doFirst {
     it.uploadResolvers.add(new WebdavResolver()) {
         name = 'groovywsReleases'
-        user = codehausUserName
-        userPassword = codehausUserPassword
+        user = "${username}"
+        userPassword = "${password}"
         addArtifactPattern("$distributionUploadUrl/[artifact]-[revision](-[classifier]).[ext]" as String)
     }
 }
@@ -264,10 +255,10 @@ uploadDists.doFirst {
 build.taskGraph.whenReady {graph ->
     if (graph.hasTask(':release')) {
         versionModifier = ''
-        distributionUploadUrl = 'https://dav.codehaus.org/dist/groovy/distributions/groovyws'
+        distributionUploadUrl = 'https://dav.codehaus.org/dist/gmod/'
     } else {
         versionModifier = new SimpleDateFormat('yyyyMMddHHmmssZ').format(buildTime)
-        distributionUploadUrl = 'https://dav.codehaus.org/snapshots.dist/groovy/distributions/groovyws'
+        distributionUploadUrl = 'https://dav.codehaus.org/snapshots.dist/gmod/'
     }
 }
 

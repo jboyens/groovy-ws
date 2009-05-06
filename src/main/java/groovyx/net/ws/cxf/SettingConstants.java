@@ -4,8 +4,15 @@
  */
 package groovyx.net.ws.cxf;
 
-public final class SettingConstants
-{
+/**
+ * Constants for configure the web service call.
+ * 
+ * @author <a href="mailto:groovy@courson.de">Dennis Bayer</a>
+ * 
+ * @since 0.5
+ */
+public final class SettingConstants {
+    
     /** Http proxy user */
     public static final String HTTP_PROXY_USER = "http.proxy.user";
     /** Http proxy password */
@@ -28,4 +35,5 @@ public final class SettingConstants
     public static final String HTTP_USER = "http.user";
     /** Http basic authentication password */
     public static final String HTTP_PASSWORD = "http.password";
+
 }

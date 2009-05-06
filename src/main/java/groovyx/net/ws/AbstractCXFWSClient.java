@@ -5,6 +5,7 @@ import groovy.lang.GroovyObjectSupport;
 import java.net.URL;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.lang.reflect.Field;
 
 import javax.xml.namespace.QName;
 
@@ -20,9 +21,10 @@ import groovyx.net.ws.cxf.*;
  * @author <a href="mailto:guillaume.alleon@gmail.com">Tog</a>
  * @author <a href="mailto:groovy@courson.de">Dennis Bayer</a>
  * @author <a href="mailto:basile.clout@gmail.com">Basile Clout</a>
- * @version 0.5
+ * @since 0.5
  */
 public abstract class AbstractCXFWSClient extends GroovyObjectSupport implements IWSClient<Client> {
+
     /**
      * The webservice-client
      */
@@ -73,11 +75,21 @@ public abstract class AbstractCXFWSClient extends GroovyObjectSupport implements
         Object[] objs = InvokerHelper.asArray(args);
 
         try {
-            QName qname = new QName(getServiceNamespaceURI(), name);
-            BindingOperationInfo op = getBindingOperationInfo(qname);
+            QName qname = null;
+            BindingOperationInfo op = null;
+
+            getLogger().warning(" Using SOAP version: " + this.soapHelper.getBinding().getSoapVersion().getVersion());
+
+            for (BindingOperationInfo boi:this.soapHelper.getBinding().getOperations()){
+                qname = boi.getName();
+                System.out.println("-> " + qname);
+                if (qname.getLocalPart().equals(name)){
+                    op = boi;
+                }
+            }
 
             if (op == null) {
-                return null;
+                throw new NoSuchMethodException(name);
             }
 
             if (getLogger().isLoggable(Level.FINE)) {
@@ -90,7 +102,7 @@ public abstract class AbstractCXFWSClient extends GroovyObjectSupport implements
                 op = op.getUnwrappedOperation();
                 response = this.client.invoke(op, objs);
             } else {
-                response = this.client.invoke(name, objs);
+                response = this.client.invoke(qname, objs);
             }
 
             if (response != null) {
@@ -117,50 +129,39 @@ public abstract class AbstractCXFWSClient extends GroovyObjectSupport implements
     }
 
     /**
-     * Returns the BindingOperationInfo for the given QName.
-     *
-     * @param qname The {@link QName} of the operation.
-     * @return A {@link BindingOperationInfo}.
-     * @see AbstractCXFWSClient#invokeMethod(String, Object)
-     */
-    protected final BindingOperationInfo getBindingOperationInfo(QName qname) {
-        getLogger().warning(" Using SOAP version: " + this.soapHelper.getBinding().getSoapVersion().getVersion());
-        return this.soapHelper.getBinding().getOperation(qname);
-    }
-
-    /**
-     * Returns the ServiceNamespaceURI of the currently set service.
-     *
-     * @return A string containing the ServiceNamespaceURI.
-     * @see AbstractCXFWSClient#invokeMethod(String, Object)
-     */
-    protected final String getServiceNamespaceURI() {
-        return this.client.getEndpoint().getService().getName().getNamespaceURI();
-    }
-
-    /**
      * Creates an object for the given classname using the classloader of the
      * current thread.
      *
      * @param classname The classname of the object which should be created.
      * @return An instance of the class.
+     * @throws IllegalAccessException
      */
-    public Object create(String classname) {
+    public Object create(String classname) throws IllegalAccessException {
+
+        if (classname == null) {
+            throw new IllegalArgumentException("Must provide the class name");
+        }
+
+        Class clazz = null;
+        try {
+            clazz = Thread.currentThread().getContextClassLoader().loadClass(classname);
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+
+        assert clazz != null;
+        if (clazz.isEnum()){
+            for (Field f:clazz.getFields()) {
+                System.out.println("field: "+f.getName());
+            }
+            return clazz;
+        }
+
         Object obj = null;
 
         try {
-            obj = Thread.currentThread().getContextClassLoader().loadClass(classname).newInstance();
-        }
-        catch (InstantiationException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-        catch (IllegalAccessException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-        catch (ClassNotFoundException e) {
-            // TODO Auto-generated catch block
+            obj = clazz.newInstance();
+        } catch (InstantiationException e) {
             e.printStackTrace();
         }
 
@@ -175,10 +176,6 @@ public abstract class AbstractCXFWSClient extends GroovyObjectSupport implements
      */
     public Client createClient(Object... args) {
 
-//        if (classLoader == null) {
-//            classLoader = Thread.currentThread().getContextClassLoader();
-//        }
-
         if (args[0] instanceof URL) {
             URL url = (URL) args[0];
 
@@ -188,6 +185,7 @@ public abstract class AbstractCXFWSClient extends GroovyObjectSupport implements
 
             throw new IllegalArgumentException("Parameters are not set properly.");
         }
+
         return null;
     }
 

@@ -12,7 +12,10 @@ import org.apache.cxf.transports.http.configuration.HTTPClientPolicy;
 /**
  * A Webservice client using the cxf-framework dynamic client factory.
  *
- * @version 06.03.2009
+ * @author <a href="mailto:groovy@courson.de">Dennis Bayer</a>
+ * @author <a href="mailto:guillaume.alleon@gmail.com">Tog</a>
+ * 
+ * @since 0.1
  */
 public class WSClient extends AbstractCXFWSClient
 {
@@ -98,16 +101,12 @@ public class WSClient extends AbstractCXFWSClient
         final boolean isSSLProtocol = WSClient.HTTPS.equals(this.url.getProtocol());
         if (isSSLProtocol) {
             this.sslHelper.initialize();
-
             url = this.sslHelper.getLocalWsdlUrl(this.url);
         }
 
         this.client = createClient(url, this.classloader);
 
         this.soapHelper.enable(this.client);
-
-        conduit = (HTTPConduit) this.client.getConduit();
-
         this.proxyHelper.enable(this.client);
         this.basicAuthHelper.enable(this.client);
 
@@ -117,6 +116,7 @@ public class WSClient extends AbstractCXFWSClient
 
         this.mtomHelper.enable(this.client);
 
+        conduit = (HTTPConduit) this.client.getConduit();
         configureHttpClientPolicy(conduit);
     }
 
@@ -174,4 +174,5 @@ public class WSClient extends AbstractCXFWSClient
     public void setPreferredSoapVersion(SoapVersion soapVersion) {
         this.soapHelper.setPreferredSoapVersion(soapVersion);
     }
+    
 }

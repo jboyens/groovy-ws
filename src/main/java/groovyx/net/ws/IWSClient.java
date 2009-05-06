@@ -4,7 +4,8 @@ package groovyx.net.ws;
  * Interface for a WSClient. The generic type C refers to a client implementation.
  *
  * @author <a href="mailto:groovy@courson.de">Dennis Bayer</a>
- * @version 14.11.2008
+ * 
+ * @since 0.5
  */
 public interface IWSClient<C>
 {

@@ -26,8 +26,6 @@ import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.TrustManagerFactory;
 
-import groovyx.net.ws.WSClient;
-
 import org.apache.cxf.configuration.jsse.TLSClientParameters;
 import org.apache.cxf.configuration.security.FiltersType;
 import org.apache.cxf.transport.http.HTTPConduit;
@@ -36,11 +34,14 @@ import org.apache.cxf.endpoint.Client;
 /**
  * Helper class to configure a ssl connection.
  *
- * @version 06.03.2009
  * @see SettingConstants#HTTPS_KEYSTORE
  * @see SettingConstants#HTTPS_KEYSTORE_PASS
  * @see SettingConstants#HTTPS_TRUSTSTORE
  * @see SettingConstants#HTTPS_TRUSTSTORE_PASS
+ * 
+ * @author <a href="mailto:guillaume.alleon@gmail.com">Tog</a>
+ * 
+ * @since 0.5
  */
 public class SSLHelper extends AbstractSettingHelper {
     /**

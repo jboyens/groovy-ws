@@ -7,22 +7,23 @@ import org.apache.cxf.binding.soap.model.SoapBindingInfo;
 
 
 /**
- * Created by IntelliJ IDEA.
- * User: alleon
- * Date: Mar 29, 2009
- * Time: 3:24:58 PM
- * To change this template use File | Settings | File Templates.
+ * Helper to configure the SOAP connection
+ * 
+ * @see SettingConstants#SOAP_SERVICE_NAMESPACE
+ * @see SettingConstants#SOAP_SERVICE_LOCALPART
+ * @see SettingConstants#SOAP_PORT_NAMESPACE
+ * @see SettingConstants#SOAP_PORT_LOCALPART
+ * 
+ * @author <a href="mailto:guillaume.alleon@gmail.com">Tog</a>
+ * 
+ * @since 0.5
  */
 public class SoapHelper extends AbstractSettingHelper {
 
-    private SoapBindingInfo soapBindingInfo;
-
     /**
-     * Default constructor
-     *
+     * The SOAP binding info.
      */
-    public SoapHelper() {
-    }
+    private SoapBindingInfo soapBindingInfo;
 
     /**
      * The preferred SOAP version
@@ -43,7 +44,6 @@ public class SoapHelper extends AbstractSettingHelper {
      * Sets the value of the SOAP version.
      *
      * @param soapVersion value of the preferred SOAP version
-     *
      */
     public void setPreferredSoapVersion(SoapVersion soapVersion) {
         this.preferredSoapVersion = soapVersion;
@@ -51,7 +51,7 @@ public class SoapHelper extends AbstractSettingHelper {
 
     /**
      * @return the Binding {@link BindingInfo}
-     * corresponding to the preferred SOAP version.
+     *         corresponding to the preferred SOAP version.
      */
     public SoapBindingInfo getBinding() {
         return this.soapBindingInfo;
@@ -60,7 +60,7 @@ public class SoapHelper extends AbstractSettingHelper {
     /**
      * Sets the user and the password for the proxy authorization.
      *
-     * @param client .
+     * @param client The client ro configure.
      */
     @Override
     protected void configureClientParameters(Client client) {
@@ -76,4 +76,5 @@ public class SoapHelper extends AbstractSettingHelper {
             }
         }
     }
+    
 }
