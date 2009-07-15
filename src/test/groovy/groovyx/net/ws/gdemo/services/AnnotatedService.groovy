@@ -13,7 +13,7 @@ class AnnotatedService {
         if( wsc == null) {
              //println "WSC NULL !"
              //return UUID.randomUUID()
-             return nul
+             return null
          } else {
              wsc.getMessageContext().get( "sessionid")
          }
