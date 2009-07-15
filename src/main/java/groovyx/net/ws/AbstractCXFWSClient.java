@@ -16,6 +16,7 @@ import org.apache.cxf.service.model.BindingOperationInfo;
 import org.codehaus.groovy.runtime.InvokerHelper;
 
 import groovyx.net.ws.cxf.*;
+import groovyx.net.ws.exceptions.InvokeException;
 
 /**
  * @author <a href="mailto:guillaume.alleon@gmail.com">Tog</a>
@@ -67,42 +68,45 @@ public abstract class AbstractCXFWSClient extends GroovyObjectSupport implements
         return LogUtils.getL7dLogger(getClass());
     }
 
-    /* (non-Javadoc)
+    /**
+     * {@inheritDoc}
+     *  
+     * @throws RuntimeException if any error occurs it will be wrapped into a RuntimeException
+     *  
      * @see groovyx.net.ws.IWSClient#invokeMethod(java.lang.String, java.lang.Object)
      */
     @Override
-    public Object invokeMethod(String name, Object args) {
-        Object[] objs = InvokerHelper.asArray(args);
+    public Object invokeMethod(String methodName, Object args) {
+        Object[] params = InvokerHelper.asArray(args);
 
         try {
-            QName qname = null;
-            BindingOperationInfo op = null;
+            BindingOperationInfo operationToBeInvoked = null;
 
-            getLogger().warning(" Using SOAP version: " + this.soapHelper.getBinding().getSoapVersion().getVersion());
+            getLogger().info("Using SOAP version: " + this.soapHelper.getBinding().getSoapVersion().getVersion());
 
-            for (BindingOperationInfo boi:this.soapHelper.getBinding().getOperations()){
-                qname = boi.getName();
-                System.out.println("-> " + qname);
-                if (qname.getLocalPart().equals(name)){
-                    op = boi;
+            for (BindingOperationInfo operation : this.soapHelper.getBinding().getOperations()) {
+                QName qname = operation.getName();
+                getLogger().info("available method: " + qname);
+                if (methodName.equals(qname.getLocalPart())) {
+                    operationToBeInvoked = operation;
                 }
             }
 
-            if (op == null) {
-                throw new NoSuchMethodException(name);
+            if (operationToBeInvoked == null) {
+                throw new NoSuchMethodException(methodName);
             }
 
             if (getLogger().isLoggable(Level.FINE)) {
-                getLogger().warning("Invoke, operation info: " + op + ", objs: " + objs.toString());
+                getLogger().info("Invoke, operation info: " + operationToBeInvoked + ", objs: " + params.toString());
             }
 
             Object[] response;
 
-            if (op.isUnwrappedCapable()) {
-                op = op.getUnwrappedOperation();
-                response = this.client.invoke(op, objs);
+            if (operationToBeInvoked.isUnwrappedCapable()) {
+                operationToBeInvoked = operationToBeInvoked.getUnwrappedOperation();
+                response = this.client.invoke(operationToBeInvoked, params);
             } else {
-                response = this.client.invoke(qname, objs);
+                response = this.client.invoke(operationToBeInvoked, params);
             }
 
             if (response != null) {
@@ -111,11 +115,11 @@ public abstract class AbstractCXFWSClient extends GroovyObjectSupport implements
 
             return null;
         }
-        catch (Exception e) {
+        catch (Exception e)
+        {
             getLogger().log(Level.SEVERE, "Could not invoke method.", e);
-            return null;
+            throw new InvokeException(e);
         }
-
     }
 
     /**

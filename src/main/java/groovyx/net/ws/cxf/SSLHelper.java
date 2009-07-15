@@ -235,6 +235,7 @@ public class SSLHelper extends AbstractSettingHelper {
 
             out = new PrintWriter(new BufferedWriter(new OutputStreamWriter(socket.getOutputStream())));
             out.println("GET " + url.getFile() + " HTTP/1.0");
+            out.println("Host: " + url.getHost());
             out.println();
             out.flush();
 
@@ -249,8 +250,12 @@ public class SSLHelper extends AbstractSettingHelper {
             wout = new BufferedWriter(new FileWriter(myWsdl));
             String inputLine;
             int i = 0;
+            boolean readLine = false;
             while ((inputLine = in.readLine()) != null) {
-                if (i++ > 3) {
+                if (inputLine.startsWith("<?xml")) {
+                    readLine = true;
+                }
+                if (readLine) {
                     wout.write(inputLine + "\n");
                 }
             }

@@ -1,5 +1,5 @@
 import java.text.SimpleDateFormat
-import org.gradle.api.internal.dependencies.WebdavResolver
+import org.gradle.api.artifacts.repositories.WebdavResolver
 
 buildTime = new Date()
 versionModifier = null
@@ -7,9 +7,9 @@ versionModifier = null
 distributionUploadUrl = null
 
 usePlugin('groovy')
+//usePlugin('maven')
 
-//defaultTasks = ["dists"]
-defaultTasks = ["compile"]
+defaultTasks = ["clean","dists"]
 
 //archivesBaseName="groovyws"
 //http://snapshots.repository.codehaus.org/org/codehaus/groovy/
@@ -20,7 +20,7 @@ version="0.5.1-SNAPSHOT"
 
 type = 'jar'
 archivesBaseName=project.name
-archive_jar.baseName=project.name
+//archive_jar.baseName=project.name
 
 sourceCompatibility=1.5
 targetCompatibility=1.5
@@ -156,43 +156,35 @@ init.dependsOn(":clean")
 
 //Use this build script without installing gradle
 createTask('wrapper', type: Wrapper).configure{
-    gradleVersion="0.5.2"
+    gradleVersion="0.6"
+}
+
+repositories {
+    mavenCentral name:'codehaus', urls:"http://repository.codehaus.org/"
+    mavenCentral name:'ibiblio' , urls:"http://mirrors.ibiblio.org/pub/mirrors/maven2/"
+    mavenCentral name:'apache'  , urls:"http://people.apache.org/repo/m2-ibiblio-rsync-repository/"
+    mavenCentral name:'maven'   , urls:"http://repo2.maven.org/maven2/"
 }
 
 dependencies {
-    //To get packages from Maven2 repository on Internet, add main Maven repository
-    addMavenStyleRepo('codehaus','http://repository.codehaus.org/')
-    addMavenStyleRepo('ibiblio','http://mirrors.ibiblio.org/pub/mirrors/maven2/')
-    addMavenStyleRepo('apache','http://people.apache.org/repo/m2-ibiblio-rsync-repository/')
-    addMavenStyleRepo('maven','http://repo2.maven.org/maven2/')
-
-    //standalone target = groovyws jar + some cxf dependency jars
-    addConfiguration('standalone')
-    //all target = standalone target without jetty server libraries
-    addConfiguration('all')
-    addConfiguration('deployerJars')
-    
-    //We select ourselves cxf's dependencies groovyws requires
-
-    //TODO: Not the best way to do it. Better would be to use client module instead of hard dependencies ...
-    // But requires handling of pom repositories failures (jsr173-ri) and selection of modules
-
     testRuntime "org.apache.ant:ant-javamail:1.7.1@jar"
      
     //'compile; target dependencies
     compile cxf_dist, groovywsCxfDeps, groovy_all_dist, junit_dist, ant_dist
+
+    groovy group: 'org.codehaus.groovy', name: 'groovy-all', version: '1.6.3'
     
     //'standalone' target dependencies
-    standalone cxf_dist, cxfBaseDeps, cxfWsSecuritySupportDeps, cxfAegisDeps, cxfJettyDeps
+    //standalone cxf_dist, cxfBaseDeps, cxfWsSecuritySupportDeps, cxfAegisDeps, cxfJettyDeps
     
     //'all' target dependencies
-    all cxf_dist, cxfBaseDeps, cxfWsSecuritySupportDeps, cxfAegisDeps
+    //all cxf_dist, cxfBaseDeps, cxfWsSecuritySupportDeps, cxfAegisDeps
 
-    deployerJars "org.apache.maven.wagon:wagon-webdav:1.0-beta-2"
+    //deployerJars "org.apache.maven.wagon:wagon-webdav:1.0-beta-2"
 }
 
 //This task looks for Bouncycastle's bcprov cryptography librarie and unsign it
-createTask('unsignDependencies'){
+task unsignDependencies << {
     
     standalone_resolve = dependencies.resolve('standalone')
     standalone_resolve.each{unsignBcprov(it); signedJars.add(it)}
@@ -203,48 +195,49 @@ createTask('unsignDependencies'){
     //unsignJars(all_resolve)
 }
 
-resources.destinationDir=file(buildDir.name+"/demos")
-resources.srcDirs=[file('src/demo/resources'), file('src/demo/groovy')]
+//resources.destinationDir=file(buildDir.name+"/demos")
+//resources.srcDirs=[file('src/demo/resources'), file('src/demo/groovy')]
                     
-dists.dependsOn('unsignDependencies')
+//dists.dependsOn('unsignDependencies')
 
 //groovyws.jar was implicitly created by the Java plugin in action 'libs'
-dists {
-    //Create groovyws-standalone jar
-    jar(appendix:"standalone"){
-        fileSet(dir: classesDir)
-        merge(dependencies.resolve('standalone'))
-        destinationDir=distsDir
-    }
-    //Create groovyws-all jar
-    jar(appendix:"all"){
-        fileSet(dir: classesDir)    
-        merge(dependencies.resolve('all'))
-        destinationDir=distsDir
-    }
-    //Create groovyws-all jar
-    jar(appendix:"minimal"){
-        fileSet(dir: classesDir)    
-        destinationDir=distsDir
-    }
-}
+//dists {
+//    //Create groovyws-standalone jar
+//    jar(appendix:"standalone"){
+//        fileSet(dir: classesDir)
+//        merge(dependencies.resolve('standalone'))
+//        destinationDir=distsDir
+//    }
+//    //Create groovyws-all jar
+//    jar(appendix:"all"){
+//        fileSet(dir: classesDir)    
+//        merge(dependencies.resolve('all'))
+//        destinationDir=distsDir
+//    }
+//    //Create groovyws-all jar
+//    jar(appendix:"minimal"){
+//        fileSet(dir: classesDir)    
+//        destinationDir=distsDir
+//    }
+//}
 
-uploadLibs {
-    uploadResolvers.addMavenDeployer('repo-deployer') {
-        addProtocolProviderJars(dependencies.resolve('deployerJars'))
-
-        repository(url: 'dav:https://dav.codehaus.org/repository/gmod/') {
-            authentication(userName: "${username}", password: "${password}")
-        }
-
-        snapshotRepository(url: 'dav:https://dav.codehaus.org/snapshots.repository/gmod/') {
-            authentication(userName: "${username}", password: "${password}")
-        }
-    }
-}
+//uploadLibs {
+//    uploadResolvers.addMavenDeployer('repo-deployer') {
+//        addProtocolProviderJars(dependencies.resolve('deployerJars'))
+//
+//        repository(url: 'dav:https://dav.codehaus.org/repository/gmod/') {
+//            authentication(userName: "${username}", password: "${password}")
+//        }
+//
+//        snapshotRepository(url: 'dav:https://dav.codehaus.org/snapshots.repository/gmod/') {
+//            authentication(userName: "${username}", password: "${password}")
+//        }
+//    }
+//}
 
 uploadDists.doFirst {
-    it.uploadResolvers.add(new WebdavResolver()) {
+//    it.uploadResolvers.add(new WebdavResolver()) {
+    it.repositories.add(new WebdavResolver()) {
         name = 'groovywsReleases'
         user = "${username}"
         userPassword = "${password}"

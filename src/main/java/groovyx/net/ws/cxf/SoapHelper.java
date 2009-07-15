@@ -64,10 +64,12 @@ public class SoapHelper extends AbstractSettingHelper {
      */
     @Override
     protected void configureClientParameters(Client client) {
+        SoapBindingInfo sbi = null;
+
         for (ServiceInfo sInfo : client.getEndpoint().getService().getServiceInfos()) {
             for (BindingInfo bInfo : sInfo.getBindings()) {
                 if (bInfo instanceof SoapBindingInfo) {
-                    SoapBindingInfo sbi = (SoapBindingInfo)bInfo;
+                    sbi = (SoapBindingInfo)bInfo;
 
                     if (sbi.getSoapVersion().getVersion() == this.preferredSoapVersion.value()) {
                         this.soapBindingInfo = sbi;
@@ -75,6 +77,9 @@ public class SoapHelper extends AbstractSettingHelper {
                 }
             }
         }
+
+        if (this.soapBindingInfo == null) this.soapBindingInfo = sbi;
+        assert this.soapBindingInfo != null;
     }
     
 }
