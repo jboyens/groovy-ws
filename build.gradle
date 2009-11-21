@@ -9,7 +9,8 @@ defaultTasks = ["clean","dists"]
 //http://repository.codehaus.org/org/codehaus/groovy/http-builder/
 project_name="groovyws"
 group='org.codehaus.groovy.modules'
-version="0.5.2-SNAPSHOT"
+version="0.5.1"
+//version="0.5.2-SNAPSHOT"
 
 type = 'jar'
 archivesBaseName=project_name
@@ -22,28 +23,28 @@ manifest.mainAttributes(['Implementation-title': "groovyws", 'Implementation-Ver
 
 cxfBaseDepsJDK6 = [
     "commons-logging:commons-logging:1.1.1@jar", 
-    "org.apache.neethi:neethi:2.0.4@jar",
+    "com.sun.xml.messaging.saaj:saaj-impl:1.3.2@jar",
+    "com.sun.xml.fastinfoset:FastInfoset:1.2.7@jar",
+    "com.sun.xml.bind:jaxb-xjc:2.1.12@jar", //bug in version 2.1.8! Use 2.1.7 or 2.1.6
     "com.sun.xml.bind:jaxb-impl:2.1.12@jar",
+    "org.apache.geronimo.specs:geronimo-ws-metadata_2.0_spec:1.1.2@jar",
+    "org.apache.geronimo.specs:geronimo-javamail_1.4_spec:1.6@jar",
+    "org.apache.geronimo.specs:geronimo-jaxws_2.1_spec:1.0@jar",
+    "org.apache.neethi:neethi:2.0.4@jar",
     "org.apache.ws.commons.schema:XmlSchema:1.4.5@jar",
     "wsdl4j:wsdl4j:1.6.2@jar",
-    "xml-resolver:xml-resolver:1.2@jar",
-    "com.sun.xml.bind:jaxb-xjc:2.1.12@jar" //bug in version 2.1.8! Use 2.1.7 or 2.1.6
-]
+    "xml-resolver:xml-resolver:1.2@jar"
+].flatten()
 
 cxfBaseDepsJDK5 = [
     cxfBaseDepsJDK6,
+    "javax.xml.bind:jaxb-api:2.1@jar",
+    "javax.xml.soap:saaj-api:1.3@jar",
     "org.apache.geronimo.specs:geronimo-activation_1.1_spec:1.0.2@jar",
     "org.apache.geronimo.specs:geronimo-annotation_1.0_spec:1.1.1@jar",
     "org.apache.geronimo.specs:geronimo-stax-api_1.0_spec:1.0.1@jar",
-    "org.apache.geronimo.specs:geronimo-javamail_1.4_spec:1.6@jar",
-    "javax.xml.bind:jaxb-api:2.1@jar",
-    "org.codehaus.woodstox:wstx-asl:3.2.9@jar", //if forget jar, then download its own stax-api, and linkage error appear ... so long hours lost ...
-    "org.apache.geronimo.specs:geronimo-ws-metadata_2.0_spec:1.1.2@jar",
-    "org.apache.geronimo.specs:geronimo-jaxws_2.1_spec:1.0@jar",
-    "javax.xml.soap:saaj-api:1.3@jar",
-    "com.sun.xml.messaging.saaj:saaj-impl:1.3.2@jar",
-    "com.sun.xml.fastinfoset:FastInfoset:1.2.7@jar"    
-].flatten()
+    "org.codehaus.woodstox:wstx-asl:3.2.9@jar"  //if forget jar, then download its own stax-api, and linkage error appear ... so long hours lost ...
+]
 
 cxfWsSecuritySupportDeps = [
     "org.bouncycastle:bcprov-jdk15:1.43@jar",
@@ -68,7 +69,7 @@ cxfJettyDeps = [
 javav=System.getProperty("java.version")
 if(javav=~/^1.6/) {
         println "Java 6"
-        cxfBaseDeps=cxfBaseDepsJDK5
+        cxfBaseDeps=cxfBaseDepsJDK6
 } else {
         println "java 5"
         cxfBaseDeps=cxfBaseDepsJDK5
