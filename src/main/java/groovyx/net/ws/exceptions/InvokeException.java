@@ -8,7 +8,7 @@ package groovyx.net.ws.exceptions;
 /**
  * An exception which can occur during the invoke of a webservice call.
  *
- * @author <a href="mailto:Dennis.Bayer@cursor.de">Dennis Bayer</a>
+ * @author <a href="mailto:groovy@courson.de">Dennis Bayer</a>
  * @version 08.06.2009
  */
 public class InvokeException extends RuntimeException

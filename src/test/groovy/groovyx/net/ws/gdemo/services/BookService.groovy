@@ -5,13 +5,17 @@ public class BookService {
 	private books = []
 	
 	Book findBook(String isbn){
-		books.find { b -> b.isbn == isbn }
+      //println isbn
+      def b = books.find { b -> b.isbn == isbn }
+      //println b.title
+      return b
 	}
 	
 	void addBook(Book b){
-        println b.title
-        println b.authors
-		books+=b
+      books+=b
+      books.each{
+        println "${it.title} by ${it.author}"
+      }
 	}
 	
 	Book[] getMyBooks(){

@@ -8,6 +8,7 @@ import org.apache.cxf.configuration.security.ClientAuthentication;
 import org.apache.cxf.configuration.security.FiltersType;
 import org.apache.cxf.frontend.ServerFactoryBean;
 import org.apache.cxf.transport.http_jetty.JettyHTTPServerEngineFactory;
+import org.apache.cxf.common.logging.LogUtils;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.TrustManagerFactory;
@@ -21,6 +22,7 @@ import java.security.*;
 import java.security.cert.CertificateException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Logger;
 
 public class WSServer {
 
@@ -35,6 +37,13 @@ public class WSServer {
 	private KeyManagerFactory kmf = null;
 
     /**
+     * @return The logger for the class
+     */
+    protected Logger getLogger() {
+        return LogUtils.getL7dLogger(getClass());
+    }
+
+    /**
      * Default constructor
      */
 	public WSServer(){
@@ -42,6 +51,7 @@ public class WSServer {
 	}
 
 	public WSServer(String service, String url){
+        // TODO: fix service is not used
 		this(url);
     }
 
@@ -49,8 +59,7 @@ public class WSServer {
 		this();
 		try {
 			this.service = new URL(url).getPath().replaceFirst("/", "");
-			if( new URL(url).getProtocol().equals("https"))
-            {
+		    if( new URL(url).getProtocol().equals("https")) {
                 setSSL();
             }
 		} catch (MalformedURLException e) {
@@ -87,7 +96,8 @@ public class WSServer {
 		this.mssl.put("https.keystore.pass", System.getProperty("https.keystore.pass", ""));
 		this.mssl.put("https.truststore", System.getProperty("https.truststore", def_truststore));
 		this.mssl.put("https.truststore.pass", System.getProperty("https.truststore.pass", def_truststore_pass));
-	}
+    }
+
 
 	public void setSSL(Map<String, String> mssl){
         this.bssl = true;
@@ -103,6 +113,13 @@ public class WSServer {
      * Start the server
      */
 	public void start(){
+
+        if (this.mssl != null){
+            getLogger().fine("> "+this.mssl.get("https.keystore")+" <");
+            getLogger().fine("> "+this.mssl.get("https.keystore.pass")+" <");
+	        getLogger().fine("> "+this.mssl.get("https.truststore")+" <");
+            getLogger().fine("> "+this.mssl.get("https.truststore.pass")+" <");
+        }
 
 		AegisDatabinding aegisDb = new AegisDatabinding();
 
@@ -122,7 +139,7 @@ public class WSServer {
 
     	this.sf.getServiceFactory().setDataBinding(aegisDb);
 
-    	if(this.bssl){
+    	if (this.bssl){
     		configureSSL();
 
     		TLSServerParameters tlsParams = new TLSServerParameters();
@@ -137,14 +154,18 @@ public class WSServer {
             }
 
     		FiltersType filters = new FiltersType();
-    		filters.getInclude().add(".*_EXPORT_.*");
-    		filters.getInclude().add(".*_EXPORT1024_.*");
-    		filters.getInclude().add(".*_WITH_DES_.*");
-    		filters.getInclude().add(".*_WITH_NULL_.*");
-    		filters.getInclude().add(".*_DH_anon_.*");
+//1    		filters.getInclude().add(".*_EXPORT_.*");
+//1    		filters.getInclude().add(".*_EXPORT1024_.*");
+//1    		filters.getInclude().add(".*_WITH_DES_.*");
+//1    		filters.getInclude().add(".*_WITH_NULL_.*");
+//1            filters.getInclude().add(".*_WITH_3DES_.*");
+//    		filters.getInclude().add(".*_DH_anon_.*");
+            // May be we can use this instead
+            filters.getInclude().add(".*");
+            filters.getExclude().add(".*_DH_anon_.*");
     		tlsParams.setCipherSuitesFilter(filters);
 
-    		if(this.bca){
+    		if (this.bca){
     			ClientAuthentication ca = new ClientAuthentication();
     			ca.setRequired(true);
     			ca.setWant(true);

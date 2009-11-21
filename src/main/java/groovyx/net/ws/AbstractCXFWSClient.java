@@ -5,9 +5,11 @@ import groovy.lang.GroovyObjectSupport;
 import java.net.URL;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.List;
 import java.lang.reflect.Field;
 
 import javax.xml.namespace.QName;
+import javax.xml.ws.BindingProvider;
 
 import org.apache.cxf.common.logging.LogUtils;
 import org.apache.cxf.endpoint.Client;
@@ -110,6 +112,7 @@ public abstract class AbstractCXFWSClient extends GroovyObjectSupport implements
             }
 
             if (response != null) {
+                getLogger().log (Level.FINE, "Response: "+response+" ["+response.getClass().getName()+"]");
                 return parseResponse(response);
             }
 
@@ -129,7 +132,11 @@ public abstract class AbstractCXFWSClient extends GroovyObjectSupport implements
      * @return The modified response.
      */
     protected Object parseResponse(Object[] response) {
-        return response[0];
+        if (response.length == 0) return response;
+
+        Object toReturn = response[0];
+
+        return toReturn;
     }
 
     /**
@@ -155,9 +162,9 @@ public abstract class AbstractCXFWSClient extends GroovyObjectSupport implements
 
         assert clazz != null;
         if (clazz.isEnum()){
-            for (Field f:clazz.getFields()) {
-                System.out.println("field: "+f.getName());
-            }
+//            for (Field f:clazz.getFields()) {
+//                System.out.println("field: "+f.getName());
+//            }
             return clazz;
         }
 
@@ -170,6 +177,10 @@ public abstract class AbstractCXFWSClient extends GroovyObjectSupport implements
         }
 
         return obj;
+    }
+
+    public void changeEndpointAddress(URL newUrl){
+        client.getRequestContext().put(BindingProvider.ENDPOINT_ADDRESS_PROPERTY, newUrl.toExternalForm());
     }
 
     /**
@@ -185,6 +196,10 @@ public abstract class AbstractCXFWSClient extends GroovyObjectSupport implements
 
             if (args.length == 2) {
                 return DynamicClientFactory.newInstance().createClient(url.toExternalForm(), (ClassLoader) args[1]);
+
+//                Bus bus = new CXFBusFactory().createBus();
+//                JaxWsDynamicClientFactory dynamicClientFactory = JaxWsDynamicClientFactory.newInstance(bus);
+//                return dynamicClientFactory.createClient(url.toExternalForm(), (ClassLoader) args[1]);
             }
 
             throw new IllegalArgumentException("Parameters are not set properly.");

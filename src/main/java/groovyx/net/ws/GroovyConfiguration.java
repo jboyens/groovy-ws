@@ -10,6 +10,7 @@ import java.lang.reflect.Modifier;
 
 public class GroovyConfiguration extends AbstractServiceConfiguration  {
     private static Method isSynthetic = null;
+
     static {
         try {
             isSynthetic = Modifier.class.getDeclaredMethod("isSynthetic", Integer.TYPE);
@@ -27,6 +28,7 @@ public class GroovyConfiguration extends AbstractServiceConfiguration  {
             throw new Error(e);
         }
 
+        // skip all methods that are specific to a Groovy object
         try {
           GroovyObject.class.getMethod(m.getName(), m.getParameterTypes());
           return false;
