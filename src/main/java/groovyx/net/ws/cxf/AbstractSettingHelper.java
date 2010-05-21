@@ -1,7 +1,9 @@
 package groovyx.net.ws.cxf;
 
 import java.util.Map;
+import java.util.logging.Logger;
 
+import org.apache.cxf.common.logging.LogUtils;
 import org.apache.cxf.endpoint.Client;
 
 /**
@@ -18,6 +20,13 @@ public abstract class AbstractSettingHelper {
      * Stores the properties.
      */
     protected Map<String, String> properties;
+
+    /**
+     * @return The logger for the class
+     */
+    protected Logger getLogger() {
+        return LogUtils.getL7dLogger(getClass());
+    }    
 
     /**
      * Initializes the setting. If no properties were set externally,

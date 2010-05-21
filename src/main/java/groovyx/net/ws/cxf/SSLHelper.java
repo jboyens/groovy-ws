@@ -72,7 +72,41 @@ public class SSLHelper extends AbstractSettingHelper {
         this.properties = new HashMap<String, String>();
 
         String def_truststore = System.getProperty("java.home") + "/lib/security/cacerts";
-        String def_truststore_pass = "changeit";
+        String def_truststore_pass = null;
+
+        KeyStore keyStore = null;
+        try {
+            keyStore = KeyStore.getInstance("JKS");
+        }
+        catch (KeyStoreException e1) {
+            // TODO Auto-generated catch block
+            e1.printStackTrace();
+        }
+
+        assert keyStore != null;
+
+        String[] candidatePassword = new String[]{"changeit", "changeme"};
+
+        for (String it:candidatePassword){
+
+            if (def_truststore_pass == null) {
+                try {
+                    File thetruststore = new File(def_truststore);
+                    keyStore.load(new FileInputStream(thetruststore), it.toCharArray());
+                    def_truststore_pass = it;
+                } catch (CertificateException e) {
+                    e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                } catch (NoSuchAlgorithmException e) {
+                    e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                } catch (FileNotFoundException e) {
+                    e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                } catch (IOException e) {
+                    // try next one
+                }
+            }
+        }
+
+        assert def_truststore_pass != null;
 
         this.properties.put(SettingConstants.HTTPS_KEYSTORE,
                 System.getProperty(SettingConstants.HTTPS_KEYSTORE, ""));
@@ -118,11 +152,11 @@ public class SSLHelper extends AbstractSettingHelper {
         }
 
         // TODO keyStore == null -> return or throw exception?! (and remove assert)
+        assert keyStore != null;
 
         try {
             if ("".compareTo(strKeystore) < 0) {
                 File thekeystore = new File(strKeystore);
-                assert keyStore != null;
                 keyStore.load(new FileInputStream(thekeystore), strKsPass.toCharArray());
                 this.keyStoreManager = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
                 this.keyStoreManager.init(keyStore, strKsPass.toCharArray());
@@ -130,7 +164,6 @@ public class SSLHelper extends AbstractSettingHelper {
 
             if ("".compareTo(strTruststore) < 0) {
                 File thetruststore = new File(strTruststore);
-                assert keyStore != null;
                 keyStore.load(new FileInputStream(thetruststore), strTsPass.toCharArray());
                 this.trustStoreManager = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
                 this.trustStoreManager.init(keyStore);
@@ -181,6 +214,9 @@ public class SSLHelper extends AbstractSettingHelper {
         filters.getInclude().add(".*_EXPORT_.*");
         filters.getInclude().add(".*_EXPORT1024_.*");
         filters.getInclude().add(".*_WITH_DES_.*");
+        filters.getInclude().add(".*_WITH_AES_.*");
+        filters.getInclude().add(".*_WITH_RC4_.*");
+        filters.getInclude().add(".*_WITH_3DES_.*");
         filters.getInclude().add(".*_WITH_NULL_.*");
         filters.getInclude().add(".*_DH_anon_.*");
 
@@ -219,7 +255,7 @@ public class SSLHelper extends AbstractSettingHelper {
                 ctx.init(this.keyStoreManager.getKeyManagers(), null, null);
             }
         } catch (KeyManagementException e) {
-            System.out.println("SSL context could not be initialized");
+            getLogger().finest("SSL context could not be initialized");
             e.printStackTrace();
 
             return null;
@@ -230,7 +266,11 @@ public class SSLHelper extends AbstractSettingHelper {
         BufferedReader in = null;
         BufferedWriter wout = null;
         try {
-            socket = (SSLSocket) ctx.getSocketFactory().createSocket(url.getHost(), url.getPort());
+
+            int port = url.getPort();
+            if (port == -1) port = url.getDefaultPort();
+
+            socket = (SSLSocket) ctx.getSocketFactory().createSocket(url.getHost(), port);
             socket.startHandshake();
 
             out = new PrintWriter(new BufferedWriter(new OutputStreamWriter(socket.getOutputStream())));
@@ -249,7 +289,7 @@ public class SSLHelper extends AbstractSettingHelper {
             //            this.wsdl = myWsdl.getAbsolutePath();
             wout = new BufferedWriter(new FileWriter(myWsdl));
             String inputLine;
-            int i = 0;
+
             boolean readLine = false;
             while ((inputLine = in.readLine()) != null) {
                 if (inputLine.startsWith("<?xml")) {
@@ -260,24 +300,24 @@ public class SSLHelper extends AbstractSettingHelper {
                 }
             }
 
-            return myWsdl.toURL();
+            return myWsdl.toURI().toURL();
 
         } catch (UnknownHostException e) {
-            System.out.println("The host: " + url.getHost()
+            getLogger().finest("The host: " + url.getHost()
                     + " is unknown or could not be determined at the moment");
             // TODO Auto-generated catch block
             e.printStackTrace();
 
             return null;
         } catch (SSLHandshakeException e) {
-            System.out.println("Error during SSL handshake between client and server. If you enabled client "
+            getLogger().finest("Error during SSL handshake between client and server. If you enabled client "
                     + "authentication for the server, then you must pass keystore parameters to the client");
             // TODO Auto-generated catch block
             e.printStackTrace();
 
             return null;
         } catch (IOException e) {
-            System.err.println("An error occured during creation of the ssl socket.");
+            getLogger().finest("An error occured during creation of the ssl socket.");
             // TODO Auto-generated catch block
             e.printStackTrace();
 

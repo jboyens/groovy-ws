@@ -104,7 +104,10 @@ public class WSClient extends AbstractCXFWSClient
             url = this.sslHelper.getLocalWsdlUrl(this.url);
         }
 
+        ClassLoader oldLoader = Thread.currentThread().getContextClassLoader();
         this.client = createClient(url, this.classloader);
+        this.classloader = Thread.currentThread().getContextClassLoader();
+        Thread.currentThread().setContextClassLoader(oldLoader);
 
         this.soapHelper.enable(this.client);
         this.proxyHelper.enable(this.client);
@@ -118,6 +121,35 @@ public class WSClient extends AbstractCXFWSClient
 
         conduit = (HTTPConduit) this.client.getConduit();
         configureHttpClientPolicy(conduit);
+    }
+    
+    public Object create(String classname) throws IllegalAccessException {
+    	
+    	if (classname == null) {
+            throw new IllegalArgumentException("Must provide the class name");
+        }
+    	
+    	Class clazz = null;
+    	try {
+    		clazz = classloader.loadClass(classname);
+    	} catch (Exception e) {
+    		e.printStackTrace();    		
+    	}
+    	
+    	assert clazz != null;
+        if (clazz.isEnum()){
+            return clazz;
+        }
+
+        Object obj = null;
+
+        try {
+            obj = clazz.newInstance();
+        } catch (InstantiationException e) {
+            e.printStackTrace();
+        }
+
+        return obj;
     }
 
     /**

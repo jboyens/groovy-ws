@@ -2,6 +2,7 @@ package groovyx.net.ws;
 
 import org.apache.cxf.aegis.type.DefaultTypeCreator;
 import org.apache.cxf.aegis.type.Type;
+import org.apache.cxf.aegis.type.TypeClassInfo;
 import org.apache.cxf.aegis.type.basic.BeanTypeInfo;
 
 public class GroovyTypeCreator extends DefaultTypeCreator {

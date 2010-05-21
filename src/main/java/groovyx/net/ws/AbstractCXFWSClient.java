@@ -3,10 +3,10 @@ package groovyx.net.ws;
 import groovy.lang.GroovyObjectSupport;
 
 import java.net.URL;
-import java.util.logging.Level;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.logging.Logger;
 import java.util.List;
-import java.lang.reflect.Field;
 
 import javax.xml.namespace.QName;
 import javax.xml.ws.BindingProvider;
@@ -14,7 +14,9 @@ import javax.xml.ws.BindingProvider;
 import org.apache.cxf.common.logging.LogUtils;
 import org.apache.cxf.endpoint.Client;
 import org.apache.cxf.endpoint.dynamic.DynamicClientFactory;
+import org.apache.cxf.service.model.BindingMessageInfo;
 import org.apache.cxf.service.model.BindingOperationInfo;
+import org.apache.cxf.service.model.MessagePartInfo;
 import org.codehaus.groovy.runtime.InvokerHelper;
 
 import groovyx.net.ws.cxf.*;
@@ -84,11 +86,11 @@ public abstract class AbstractCXFWSClient extends GroovyObjectSupport implements
         try {
             BindingOperationInfo operationToBeInvoked = null;
 
-            getLogger().info("Using SOAP version: " + this.soapHelper.getBinding().getSoapVersion().getVersion());
+            getLogger().finest("Using SOAP version: " + this.soapHelper.getBinding().getSoapVersion().getVersion());
 
             for (BindingOperationInfo operation : this.soapHelper.getBinding().getOperations()) {
                 QName qname = operation.getName();
-                getLogger().info("available method: " + qname);
+                getLogger().finest("available method: " + qname);
                 if (methodName.equals(qname.getLocalPart())) {
                     operationToBeInvoked = operation;
                 }
@@ -98,21 +100,44 @@ public abstract class AbstractCXFWSClient extends GroovyObjectSupport implements
                 throw new NoSuchMethodException(methodName);
             }
 
-            if (getLogger().isLoggable(Level.FINE)) {
-                getLogger().info("Invoke, operation info: " + operationToBeInvoked + ", objs: " + params.toString());
+            getLogger().finest("Invoke, operation info: " + operationToBeInvoked + ", objs: " + params.toString());
+
+            BindingMessageInfo inputMessageInfo;
+
+            if (!operationToBeInvoked.isUnwrapped()){
+                //Operation uses document literal wrapped style.
+                inputMessageInfo = operationToBeInvoked.getWrappedOperation().getInput();
+            } else {
+                inputMessageInfo = operationToBeInvoked.getUnwrappedOperation().getInput();
             }
+
+            List<MessagePartInfo> parts = inputMessageInfo.getMessageParts();
+            if (parts.isEmpty()){
+                getLogger().finest("parts is empty. No message !");
+            } else {
+                MessagePartInfo partInfo = parts.get(0); // Input class is Order
+                // Get the input class Order
+                Class<?> param1Class = partInfo.getTypeClass();
+
+                getLogger().finest("param1 is of Type: "+param1Class.getCanonicalName());
+            }
+            getLogger().finest("There are "+params.length+" parameters to the call");
+            if (params.length > 0) getLogger().finest("First parameter is of type: "+params[0].getClass().getCanonicalName());
 
             Object[] response;
 
             if (operationToBeInvoked.isUnwrappedCapable()) {
                 operationToBeInvoked = operationToBeInvoked.getUnwrappedOperation();
+                getLogger().finest("The operation <"+operationToBeInvoked+"> is Unwrap capable");
                 response = this.client.invoke(operationToBeInvoked, params);
             } else {
+                operationToBeInvoked = operationToBeInvoked.getWrappedOperation();
+                getLogger().finest("The operation <"+operationToBeInvoked+"> is NOT Unwrap capable");
                 response = this.client.invoke(operationToBeInvoked, params);
             }
 
             if (response != null) {
-                getLogger().log (Level.FINE, "Response: "+response+" ["+response.getClass().getName()+"]");
+                getLogger().finest("Response: "+response.toString()+" ["+response.getClass().getName()+"]");
                 return parseResponse(response);
             }
 
@@ -120,7 +145,7 @@ public abstract class AbstractCXFWSClient extends GroovyObjectSupport implements
         }
         catch (Exception e)
         {
-            getLogger().log(Level.SEVERE, "Could not invoke method.", e);
+            getLogger().finest("Could not invoke method." + e);
             throw new InvokeException(e);
         }
     }
@@ -132,9 +157,15 @@ public abstract class AbstractCXFWSClient extends GroovyObjectSupport implements
      * @return The modified response.
      */
     protected Object parseResponse(Object[] response) {
-        if (response.length == 0) return response;
+        Object toReturn;
 
-        Object toReturn = response[0];
+        if (response.length == 0) {
+            toReturn = response;
+        } else if (response.length == 1) {
+            toReturn = response[0];
+        } else {
+            toReturn = new ArrayList<Object>(Arrays.asList(response));
+        }
 
         return toReturn;
     }
